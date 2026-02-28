@@ -1,145 +1,143 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Link } from 'react-router-dom';
-import Login from '../components/Login';
-import ForcePasswordChange from '../components/ForcePasswordChange';
-import Orders from '../components/admin/Orders';
-import Finance from '../components/admin/Finance';
-import Messages from '../components/admin/Messages';
-import Logistics from '../components/admin/Logistics';
-import { LayoutDashboard, LogOut, Truck, ClipboardList, TrendingUp, Mail, Package } from 'lucide-react';
+import { LayoutDashboard, LogOut, Package, ClipboardList, Mail, Truck, TrendingUp, Calendar } from 'lucide-react';
 
-export default function AdminPanel() {
-    const [session, setSession] = useState(null);
-    const [forcePasswordChange, setForcePasswordChange] = useState(false);
-    const [activeTab, setActiveTab] = useState('orders');
-    const [unreadMessages, setUnreadMessages] = useState(0);
-    const prevUnreadCount = useRef(0);
+// Componente de Login Simples integrado para evitar erros de importação
+function SimpleLogin({ onLogin }) {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    // Sidebar Items Configuration
-    const menuItems = [
-        { id: 'orders', label: 'Vendas', icon: <ClipboardList size={18} /> },
-        { id: 'logistics', label: 'Logística', icon: <Truck size={18} /> },
-        { id: 'messages', label: 'Suporte', icon: <Mail size={18} />, badge: true },
-        { id: 'finance', label: 'Financeiro', icon: <TrendingUp size={18} /> },
-    ];
-
-    // Auth & Session
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-            setSession(session);
-        });
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
-
-    // Message Notifications
-    const fetchUnreadCount = async () => {
-        try {
-            const { count, error } = await supabase
-                .from('mensagens')
-                .select('*', { count: 'exact', head: true })
-                .eq('lida', false);
-
-            if (!error) setUnreadMessages(count || 0);
-        } catch (err) {
-            console.error('Erro no contador:', err);
-        }
-    };
-
-    useEffect(() => {
-        if (session) {
-            fetchUnreadCount();
-            const interval = setInterval(fetchUnreadCount, 30000);
-            return () => clearInterval(interval);
-        }
-    }, [session]);
-
-    useEffect(() => {
-        if (unreadMessages > prevUnreadCount.current) {
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-            audio.play().catch(() => { });
-        }
-        prevUnreadCount.current = unreadMessages;
-    }, [unreadMessages]);
-
-    const handleLogout = () => supabase.auth.signOut();
-
-    if (!session) return <Login onLogin={(s, needs) => { setSession(s); setForcePasswordChange(needs); }} />;
-    if (forcePasswordChange) return <ForcePasswordChange onComplete={() => setForcePasswordChange(false)} />;
-
-    const renderTabContent = () => {
-        try {
-            switch (activeTab) {
-                case 'orders': return <Orders />;
-                case 'logistics': return <Logistics />;
-                case 'messages': return <Messages />;
-                case 'finance': return <Finance />;
-                default: return <Orders />;
-            }
-        } catch (err) {
-            return (
-                <div className="p-12 text-center bg-dark-800 border-2 border-dashed border-red-500/30 rounded-3xl">
-                    <h2 className="text-xl font-bold text-red-400 mb-2">Ops! Algo deu errado nesta aba.</h2>
-                    <p className="text-neutral-500">O erro foi isolado para proteger o restante do painel.</p>
-                </div>
-            );
-        }
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) alert(error.message);
+        else onLogin(data.session);
+        setLoading(false);
     };
 
     return (
+        <div className="min-h-screen bg-dark-900 flex items-center justify-center p-4">
+            <form onSubmit={handleLogin} className="bg-dark-800 p-8 rounded-2xl border border-dark-700 w-full max-w-md shadow-2xl">
+                <div className="flex justify-center mb-6"><Package size={48} className="text-primary" /></div>
+                <h1 className="text-2xl font-bold text-white text-center mb-6">Restaurar Acesso</h1>
+                <input type="email" placeholder="Email" value={email} onChange={e => setEmail(email)} className="w-full bg-dark-900 border border-dark-700 rounded-xl p-3 mb-4 text-white outline-none focus:border-primary" required />
+                <input type="password" placeholder="Senha" value={password} onChange={e => setPassword(password)} className="w-full bg-dark-900 border border-dark-700 rounded-xl p-3 mb-6 text-white outline-none focus:border-primary" required />
+                <button type="submit" disabled={loading} className="w-full bg-primary hover:bg-primary-hover text-dark-900 font-bold p-3 rounded-xl transition-all">
+                    {loading ? 'Entrando...' : 'Entrar no Painel'}
+                </button>
+            </form>
+        </div>
+    );
+}
+
+export default function AdminPanel() {
+    console.log('Admin carregado com sucesso');
+
+    const [session, setSession] = useState(null);
+    const [activeTab, setActiveTab] = useState('orders');
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setSession(session));
+        return () => subscription.unsubscribe();
+    }, []);
+
+    useEffect(() => {
+        if (session && activeTab === 'orders') fetchOrders();
+    }, [session, activeTab]);
+
+    const fetchOrders = async () => {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase.from('pedidos').select('*').order('created_at', { ascending: false });
+            if (error) throw error;
+            setOrders(data || []);
+        } catch (err) {
+            console.error('Erro ao buscar:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (!session) return <SimpleLogin onLogin={setSession} />;
+
+    return (
         <div className="min-h-screen bg-dark-900 text-neutral-200 flex flex-col md:flex-row">
-            {/* Sidebar */}
-            <aside className="w-full md:w-64 bg-dark-800 border-r border-dark-100/10 flex-shrink-0 flex flex-col sticky top-0 md:h-screen z-50 shadow-2xl">
-                <div className="h-16 flex items-center gap-3 px-6 border-b border-dark-100/10">
-                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                        <Package className="text-dark-900" size={20} />
-                    </div>
-                    <span className="font-black text-xl text-white tracking-tighter">ADMIN v3</span>
+            {/* Sidebar Simples */}
+            <aside className="w-full md:w-64 bg-dark-800 border-r border-dark-700 flex flex-col sticky top-0 md:h-screen z-50">
+                <div className="h-16 flex items-center gap-3 px-6 border-b border-dark-700">
+                    <Package className="text-primary" />
+                    <span className="font-bold text-xl text-white">ADMIN RESGATADO</span>
                 </div>
-
-                <nav className="flex-1 overflow-y-auto p-4 flex md:flex-col gap-1.5 no-scrollbar">
-                    {menuItems.map(item => (
-                        <button
-                            key={item.id}
-                            onClick={() => setActiveTab(item.id)}
-                            className={`flex items-center justify-between gap-3 px-4 py-3.5 rounded-xl transition-all font-black text-sm w-full text-left uppercase tracking-widest ${activeTab === item.id
-                                    ? 'bg-primary text-dark-900 shadow-lg shadow-primary/20 scale-[1.02]'
-                                    : 'text-neutral-500 hover:bg-dark-700/50 hover:text-white'
-                                }`}
-                        >
-                            <div className="flex items-center gap-3">
-                                {item.icon}
-                                <span>{item.label}</span>
-                            </div>
-                            {item.badge && unreadMessages > 0 && (
-                                <span className="bg-red-500 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center animate-bounce shadow-lg font-black">
-                                    {unreadMessages}
-                                </span>
-                            )}
-                        </button>
-                    ))}
-                </nav>
-
-                <div className="p-4 border-t border-dark-100/10 bg-dark-900/50">
-                    <button onClick={handleLogout} className="w-full p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl transition-all flex items-center justify-center gap-2 font-black uppercase text-xs tracking-tighter border border-red-500/20">
-                        <LogOut size={16} /> Sair do Painel
+                <nav className="flex-1 p-4 flex md:flex-col gap-2">
+                    <button onClick={() => setActiveTab('orders')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm ${activeTab === 'orders' ? 'bg-primary text-dark-900' : 'text-neutral-500 hover:bg-dark-700'}`}>
+                        <ClipboardList size={18} /> Vendas
                     </button>
-                    <Link to="/" className="w-full mt-2 p-3 bg-dark-700 hover:bg-dark-600 text-white rounded-xl transition-all flex items-center justify-center gap-2 font-bold text-xs uppercase tracking-tighter border border-dark-600">
-                        <LayoutDashboard size={16} /> Voltar para Loja
-                    </Link>
+                    <button onClick={() => setActiveTab('logistics')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm ${activeTab === 'logistics' ? 'bg-primary text-dark-900' : 'text-neutral-500 hover:bg-dark-700'}`}>
+                        <Truck size={18} /> Logística
+                    </button>
+                    <button onClick={() => setActiveTab('messages')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm ${activeTab === 'messages' ? 'bg-primary text-dark-900' : 'text-neutral-500 hover:bg-dark-700'}`}>
+                        <Mail size={18} /> Suporte
+                    </button>
+                    <button onClick={() => setActiveTab('finance')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm ${activeTab === 'finance' ? 'bg-primary text-dark-900' : 'text-neutral-500 hover:bg-dark-700'}`}>
+                        <TrendingUp size={18} /> Financeiro
+                    </button>
+                </nav>
+                <div className="p-4 border-t border-dark-700">
+                    <button onClick={() => supabase.auth.signOut()} className="w-full p-3 bg-red-500/10 text-red-500 rounded-xl font-bold text-xs uppercase hover:bg-red-500/20 transition-all">Sair</button>
                 </div>
             </aside>
 
-            {/* Content Area */}
-            <main className="flex-1 overflow-y-auto p-4 md:p-10 relative">
-                <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-                    {renderTabContent()}
-                </div>
+            {/* Conteúdo Principal */}
+            <main className="flex-1 p-4 md:p-10 overflow-y-auto">
+                {activeTab === 'orders' ? (
+                    <div className="max-w-7xl mx-auto">
+                        <div className="flex justify-between items-center mb-8">
+                            <h1 className="text-2xl font-bold text-white">Vendas Recentes</h1>
+                            <button onClick={fetchOrders} className="p-2 bg-dark-800 rounded-lg text-neutral-400 hover:text-white border border-dark-700">Atualizar</button>
+                        </div>
+
+                        {loading ? (
+                            <div className="p-20 text-center text-neutral-500">Carregando...</div>
+                        ) : (
+                            <div className="bg-dark-800 border border-dark-700 rounded-xl overflow-hidden">
+                                <table className="w-full text-left">
+                                    <thead className="bg-dark-900/50 border-b border-dark-700 text-xs text-neutral-500 uppercase">
+                                        <tr>
+                                            <th className="p-4">ID</th>
+                                            <th className="p-4">Data</th>
+                                            <th className="p-4">Status</th>
+                                            <th className="p-4 text-right">Valor</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-dark-700">
+                                        {orders.map(order => (
+                                            <tr key={order.id} className="hover:bg-dark-700/30">
+                                                <td className="p-4 text-sm text-neutral-500">#{order.id}</td>
+                                                <td className="p-4 text-sm"><div className="flex items-center gap-2"><Calendar size={14} className="text-neutral-600" /> {new Date(order.created_at).toLocaleDateString('pt-BR')}</div></td>
+                                                <td className="p-4 text-sm text-white truncate max-w-xs">{order.status}</td>
+                                                <td className="p-4 text-right font-bold text-emerald-400">R$ {order.valor_total?.toFixed(2)}</td>
+                                            </tr>
+                                        ))}
+                                        {orders.length === 0 && <tr><td colSpan="4" className="p-10 text-center text-neutral-500">Nenhum pedido encontrado.</td></tr>}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center min-h-[50vh] text-center p-12 bg-dark-800 rounded-3xl border border-dark-700">
+                        <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4"><Package className="text-primary" /></div>
+                        <h2 className="text-xl font-bold text-white mb-2">Aba "{activeTab}" em Manutenção</h2>
+                        <p className="text-neutral-500">Estamos simplificando o código para restaurar a estabilidade total.</p>
+                        <button onClick={() => setActiveTab('orders')} className="mt-6 text-primary font-bold hover:underline">Voltar para Vendas</button>
+                    </div>
+                )}
             </main>
         </div>
     );
