@@ -58,16 +58,21 @@ export default function SupportModal({ isOpen, onClose }) {
             const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006';
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
 
-            // 3. Open WhatsApp
-            window.open(whatsappUrl, '_blank');
+            // 3. Open WhatsApp (Moved inside success block for cleaner flow)
 
             alert('Mensagem enviada com sucesso ao banco!');
             setIsSuccess(true);
+
+            // Open WhatsApp
+            window.open(whatsappUrl, '_blank');
+
             setTimeout(() => {
                 setIsSuccess(false);
                 setFormData({ nome: '', estabelecimento: '', assunto: 'Dúvidas', mensagem: '' });
                 onClose();
-            }, 2000);
+                // Forçar recarga para limpar cache e resetar conexão
+                window.location.reload();
+            }, 1500);
 
         } catch (error) {
             console.error('Erro ao enviar mensagem:', error.message);

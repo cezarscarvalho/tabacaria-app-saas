@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { Mail, MailOpen, Archive, Trash2, CheckCircle, Clock } from 'lucide-react';
+import { Mail, MailOpen, Trash2, CheckCircle, Clock } from 'lucide-react';
 
 export default function Messages() {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('all'); // all, unread, archived
+    const [filter, setFilter] = useState('all'); // all, unread
 
     useEffect(() => {
         fetchMessages();
@@ -42,19 +42,6 @@ export default function Messages() {
         }
     };
 
-    const toggleArchive = async (id, currentStatus) => {
-        try {
-            const { error } = await supabase
-                .from('mensagens')
-                .update({ arquivada: !currentStatus })
-                .eq('id', id);
-
-            if (error) throw error;
-            setMessages(messages.map(m => m.id === id ? { ...m, arquivada: !currentStatus } : m));
-        } catch (error) {
-            console.error('Erro ao arquivar mensagem:', error.message);
-        }
-    };
 
     const deleteMessage = async (id) => {
         if (!confirm('Tem certeza que deseja excluir esta mensagem?')) return;
@@ -82,9 +69,8 @@ export default function Messages() {
     };
 
     const filteredMessages = messages.filter(m => {
-        if (filter === 'unread') return !m.lida && !m.arquivada;
-        if (filter === 'archived') return m.arquivada;
-        return !m.arquivada;
+        if (filter === 'unread') return !m.lida;
+        return true;
     });
 
     const testSound = () => {
@@ -121,12 +107,6 @@ export default function Messages() {
                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === 'unread' ? 'bg-primary text-dark-900 shadow-lg' : 'text-neutral-400 hover:text-white'}`}
                         >
                             Não Lidas
-                        </button>
-                        <button
-                            onClick={() => setFilter('archived')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === 'archived' ? 'bg-primary text-dark-900 shadow-lg' : 'text-neutral-400 hover:text-white'}`}
-                        >
-                            Arquivadas
                         </button>
                     </div>
                 </div>
@@ -177,13 +157,6 @@ export default function Messages() {
                                         title={msg.lida ? "Marcar como não lida" : "Marcar como lida"}
                                     >
                                         {msg.lida ? <MailOpen size={20} /> : <Mail size={20} />}
-                                    </button>
-                                    <button
-                                        onClick={() => toggleArchive(msg.id, msg.arquivada)}
-                                        className={`p-3 rounded-xl transition-all ${msg.arquivada ? 'bg-amber-500/20 text-amber-500 hover:bg-amber-500/30' : 'bg-dark-700 text-neutral-400 hover:text-white'}`}
-                                        title={msg.arquivada ? "Desarquivar" : "Arquivar"}
-                                    >
-                                        <Archive size={20} />
                                     </button>
                                     <button
                                         onClick={() => deleteMessage(msg.id)}
