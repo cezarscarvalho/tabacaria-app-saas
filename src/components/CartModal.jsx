@@ -25,25 +25,33 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
         }
 
         setIsCheckingOut(true);
-        let text = `Olá! Meu nome é *${customerName.trim()}* e gostaria de fazer o pedido:%0A%0A`;
-        let orderDetails = `Novo Pedido - Cliente: ${customerName.trim()} - Itens: `;
-
-        let itemListText = [];
-        cart.forEach(item => {
-            const itemText = `${item.quantidade}x ${item.nome} (${formatPrice(item.preco_venda)})`;
-            text += itemText + '%0A';
-            itemListText.push(itemText);
-        });
-
-        orderDetails += itemListText.join(', ');
-        text += `%0A*Total: ${formatPrice(total)}*`;
-
-        const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006';
-        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
 
         try {
-            // Register order in Supabase
-            // Because 'detalhes' doesn't exist, we put everything into 'status' as a combined string.
+            // 1. Generate the WhatsApp message
+            let text = `Olá! Meu nome é *${customerName.trim()}* e gostaria de fazer o pedido:%0A%0A`;
+            let orderDetails = `Novo Pedido - Cliente: ${customerName.trim()} - Itens: `;
+
+            let itemListText = [];
+            cart.forEach(item => {
+                const itemText = `${item.quantidade}x ${item.nome} (${formatPrice(item.preco_venda)})`;
+                text += itemText + '%0A';
+                itemListText.push(itemText);
+            });
+
+            orderDetails += itemListText.join(', ');
+            text += `%0A*Total: ${formatPrice(total)}*`;
+
+            const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006';
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
+
+            // 2. Open WhatsApp (Must be triggered directly by user action to avoid popup blockers)
+            const whatsappWindow = window.open(whatsappUrl, '_blank');
+
+            if (!whatsappWindow) {
+                throw new Error('Não foi possível abrir o WhatsApp. Verifique se o navegador bloqueou o popup.');
+            }
+
+            // 3. Register order in Supabase only if redirect was initiated
             const { error } = await supabase
                 .from('pedidos')
                 .insert([{
@@ -52,23 +60,20 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
                 }]);
 
             if (error) {
-                console.error('Erro ao registrar pedido no Supabase:', error);
-                // Alert the user but continue to WhatsApp anyway
-                alert('Aviso: Ocorreu um erro ao salvar o histórico do pedido, mas você será redirecionado para o WhatsApp normalmente.');
-            } else {
-                // Clear cart only if database insert succeeds cleanly or if you prefer to always clear it
-                if (clearCart) {
-                    clearCart();
-                }
+                console.error('Erro ao registrar pedido no banco:', error);
+                // Even if database fails here, we don't alert the customer to avoid friction,
+                // since the WhatsApp window is already open.
             }
+
+            // 4. Success and Clean up
+            if (clearCart) clearCart();
+            onClose();
+
         } catch (error) {
-            console.error('Erro inesperado no checkout:', error);
-            alert('Aviso: Erro de conexão. Redirecionando para o WhatsApp preventivamente.');
+            console.error('Erro no checkout:', error);
+            alert(error.message || 'Ocorreu um erro ao processar seu pedido. Tente novamente.');
         } finally {
             setIsCheckingOut(false);
-            // Always open WhatsApp and close modal, even on database failure (fallback mechanism)
-            window.open(whatsappUrl, '_blank');
-            onClose();
         }
     };
 
@@ -166,7 +171,10 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
                             className="w-full bg-[#25D366] hover:bg-[#1ebd5c] text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg shadow-[#25D366]/20 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
                             {isCheckingOut ? (
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    <span>Enviando seu pedido...</span>
+                                </div>
                             ) : (
                                 <>
                                     <MessageCircle size={20} />
