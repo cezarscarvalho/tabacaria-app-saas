@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient';
 
 export default function CartModal({ isOpen, onClose, cart, updateQuantity, removeItem, clearCart }) {
     const [isCheckingOut, setIsCheckingOut] = useState(false);
+    const [customerName, setCustomerName] = useState('');
 
     if (!isOpen) return null;
 
@@ -18,9 +19,14 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
     };
 
     const handleCheckout = async () => {
+        if (!customerName.trim()) {
+            alert('Por favor, informe seu nome para continuarmos com o pedido.');
+            return;
+        }
+
         setIsCheckingOut(true);
-        let text = 'Olá! Gostaria de fazer o pedido:%0A%0A';
-        let orderDetails = '';
+        let text = `Olá! Meu nome é *${customerName.trim()}* e gostaria de fazer o pedido:%0A%0A`;
+        let orderDetails = `Cliente: ${customerName.trim()}\n\n`;
 
         cart.forEach(item => {
             const itemText = `${item.quantidade}x ${item.nome} (${formatPrice(item.preco_venda)})`;
@@ -53,7 +59,7 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
             // Redireciona para o WhatsApp (SÓ ACONTECE SE O INSERT ACIMA DER CERTO)
             // Altere o número abaixo para o seu (com código do país 55 e DDD) 
             // ou crie uma variável VITE_WHATSAPP_NUMBER no arquivo .env
-            const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5511999999999';
+            const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006';
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
             window.open(whatsappUrl, '_blank');
 
@@ -135,6 +141,20 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
 
                 {cart.length > 0 && (
                     <div className="p-5 border-t border-dark-700 bg-dark-900/50 mt-auto">
+                        <div className="mb-4">
+                            <label htmlFor="customerName" className="block text-sm font-medium text-neutral-400 mb-1">
+                                Seu Nome
+                            </label>
+                            <input
+                                type="text"
+                                id="customerName"
+                                value={customerName}
+                                onChange={(e) => setCustomerName(e.target.value)}
+                                placeholder="Como prefere ser chamado?"
+                                className="w-full bg-dark-800 border border-dark-600 rounded-xl px-4 py-2.5 text-white outline-none focus:border-primary transition-colors placeholder:text-neutral-600"
+                            />
+                        </div>
+
                         <div className="flex justify-between items-center mb-4">
                             <span className="text-neutral-400">Total</span>
                             <span className="text-2xl font-bold text-white">{formatPrice(total)}</span>

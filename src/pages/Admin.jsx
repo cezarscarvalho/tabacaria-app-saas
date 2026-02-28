@@ -7,7 +7,8 @@ import Clients from '../components/admin/Clients';
 import Suppliers from '../components/admin/Suppliers';
 import Settings from '../components/admin/Settings';
 import Orders from '../components/admin/Orders';
-import { Plus, Package, RefreshCw, LayoutDashboard, LogOut, Users, Truck, Settings as SettingsIcon, ClipboardList } from 'lucide-react';
+import Finance from '../components/admin/Finance';
+import { Plus, Package, RefreshCw, LayoutDashboard, LogOut, Users, Truck, Settings as SettingsIcon, ClipboardList, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Admin() {
@@ -189,6 +190,8 @@ export default function Admin() {
 
     const renderContent = () => {
         switch (activeTab) {
+            case 'finance':
+                return <Finance />;
             case 'orders':
                 return <Orders />;
             case 'products':
@@ -216,6 +219,13 @@ export default function Admin() {
                 {/* Mobile Menu (Horizontal scroll) / Desktop Menu (Vertical) */}
                 <div className="flex-1 overflow-x-auto md:overflow-y-auto no-scrollbar py-2 md:py-6 px-4">
                     <nav className="flex md:flex-col gap-2 min-w-max md:min-w-0">
+                        <button
+                            onClick={() => setActiveTab('finance')}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm w-full text-left ${activeTab === 'finance' ? 'bg-primary border border-primary/20 text-dark-900 shadow-sm' : 'text-neutral-400 hover:bg-dark-700/50 hover:text-white'}`}
+                        >
+                            <TrendingUp size={18} className={activeTab === 'finance' ? 'text-dark-900' : ''} />
+                            Financeiro
+                        </button>
                         <button
                             onClick={() => setActiveTab('orders')}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm w-full text-left ${activeTab === 'orders' ? 'bg-primary border border-primary/20 text-dark-900 shadow-sm' : 'text-neutral-400 hover:bg-dark-700/50 hover:text-white'}`}
