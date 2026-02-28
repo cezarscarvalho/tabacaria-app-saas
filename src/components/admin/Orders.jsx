@@ -57,20 +57,36 @@ export default function Orders() {
         }).format(date);
     };
 
-    const handleStatusChange = async (id, newStatus) => {
+    const handleStatusChange = async (id, newStatus, currentFullStatus) => {
         try {
+            // Extract the base order details string by removing any known status prefixes if they exist
+            // Format is typically: "Novo Pedido - Cliente..." or "Entregue - Cliente..." 
+            // BUT our new insert just puts "Cliente..." so let's just prefix the new status to it
+            // or replace the existing prefix.
+            let baseDetails = currentFullStatus;
+
+            const statusesToRemove = ['Novo Pedido - ', 'Pendente - ', 'Entregue - ', 'Cancelado - '];
+            for (const status of statusesToRemove) {
+                if (baseDetails?.startsWith(status)) {
+                    baseDetails = baseDetails.substring(status.length);
+                    break;
+                }
+            }
+
+            // If it doesn't start with any known prefix, it's just the raw details (like from our new insert)
+            const updatedStatusString = `${newStatus} - ${baseDetails}`;
+
             // Optimistic UI update
             setOrders(orders.map(order =>
-                order.id === id ? { ...order, status: newStatus } : order
+                order.id === id ? { ...order, status: updatedStatusString } : order
             ));
 
             const { error } = await supabase
                 .from('pedidos')
-                .update({ status: newStatus })
+                .update({ status: updatedStatusString })
                 .eq('id', id);
 
             if (error) throw error;
-            // fetchOrders(); // We have realtime subscription or optimistic update, maybe we don't strictly need this.
         } catch (error) {
             console.error('Erro ao atualizar status:', error.message);
             alert('Erro ao atualizar status do pedido.');
@@ -159,11 +175,11 @@ export default function Orders() {
                                         <td className="py-4 px-6">
                                             <div className="group relative">
                                                 <p className="text-sm text-white line-clamp-2 whitespace-pre-wrap">
-                                                    {order.detalhes || 'S/ Detalhes'}
+                                                    {order.status || 'S/ Detalhes'}
                                                 </p>
-                                                {order.detalhes && (
+                                                {order.status && (
                                                     <button
-                                                        onClick={() => copyToClipboard(order.detalhes)}
+                                                        onClick={() => copyToClipboard(order.status)}
                                                         className="absolute -right-2 top-0 p-1 opacity-0 group-hover:opacity-100 transition-opacity text-primary hover:bg-primary/10 rounded"
                                                         title="Copiar texto"
                                                     >
@@ -180,21 +196,33 @@ export default function Orders() {
                                         </td>
 
                                         <td className="py-4 px-6">
-                                            <select
-                                                value={order.status || 'Novo Pedido'}
-                                                onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                                                className={`w-full text-sm font-semibold rounded-lg px-3 py-2 border outline-none transition-colors appearance-none cursor-pointer text-center
-                                                    ${order.status === 'Novo Pedido' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:border-amber-500/50' :
-                                                        order.status === 'Entregue' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:border-emerald-500/50' :
-                                                            order.status === 'Cancelado' ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:border-red-500/50' :
-                                                                'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:border-blue-500/50'
-                                                    }`}
-                                            >
-                                                <option value="Novo Pedido" className="bg-dark-800 text-white">🟠 Novo Pedido</option>
-                                                <option value="Pendente" className="bg-dark-800 text-white">🔵 Pendente</option>
-                                                <option value="Entregue" className="bg-dark-800 text-white">🟢 Entregue</option>
-                                                <option value="Cancelado" className="bg-dark-800 text-white">🔴 Cancelado</option>
-                                            </select>
+                                            {(() => {
+                                                let currentBadgeStatus = 'Novo Pedido';
+                                                const s = order.status || '';
+                                                if (s.startsWith('Pendente -')) currentBadgeStatus = 'Pendente';
+                                                else if (s.startsWith('Entregue -')) currentBadgeStatus = 'Entregue';
+                                                else if (s.startsWith('Cancelado -')) currentBadgeStatus = 'Cancelado';
+                                                else if (s.startsWith('Novo Pedido -')) currentBadgeStatus = 'Novo Pedido';
+                                                // Default to Novo Pedido if no known prefix is found
+
+                                                return (
+                                                    <select
+                                                        value={currentBadgeStatus}
+                                                        onChange={(e) => handleStatusChange(order.id, e.target.value, order.status)}
+                                                        className={`w-full text-sm font-semibold rounded-lg px-3 py-2 border outline-none transition-colors appearance-none cursor-pointer text-center
+                                                            ${currentBadgeStatus === 'Novo Pedido' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:border-amber-500/50' :
+                                                                currentBadgeStatus === 'Entregue' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:border-emerald-500/50' :
+                                                                    currentBadgeStatus === 'Cancelado' ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:border-red-500/50' :
+                                                                        'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:border-blue-500/50'
+                                                            }`}
+                                                    >
+                                                        <option value="Novo Pedido" className="bg-dark-800 text-white">🟠 Novo Pedido</option>
+                                                        <option value="Pendente" className="bg-dark-800 text-white">🔵 Pendente</option>
+                                                        <option value="Entregue" className="bg-dark-800 text-white">🟢 Entregue</option>
+                                                        <option value="Cancelado" className="bg-dark-800 text-white">🔴 Cancelado</option>
+                                                    </select>
+                                                );
+                                            })()}
                                         </td>
 
                                         <td className="py-4 px-6 text-right">

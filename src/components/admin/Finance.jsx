@@ -23,7 +23,11 @@ export default function Finance() {
 
             if (error) throw error;
             // Only count non-canceled orders for revenue
-            const validOrders = (data || []).filter(o => o.status !== 'Cancelado');
+            // Since status is now a long combined string, we check if it starts with 'Cancelado'
+            const validOrders = (data || []).filter(o => {
+                const s = o.status || '';
+                return !s.startsWith('Cancelado -') && s !== 'Cancelado';
+            });
             setOrders(validOrders);
         } catch (error) {
             console.error('Erro ao buscar pedidos para o financeiro:', error.message);

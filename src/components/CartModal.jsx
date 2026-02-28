@@ -26,49 +26,49 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
 
         setIsCheckingOut(true);
         let text = `Olá! Meu nome é *${customerName.trim()}* e gostaria de fazer o pedido:%0A%0A`;
-        let orderDetails = `Cliente: ${customerName.trim()}\n\n`;
+        let orderDetails = `Novo Pedido - Cliente: ${customerName.trim()} - Itens: `;
 
+        let itemListText = [];
         cart.forEach(item => {
             const itemText = `${item.quantidade}x ${item.nome} (${formatPrice(item.preco_venda)})`;
             text += itemText + '%0A';
-            orderDetails += itemText + '\n';
+            itemListText.push(itemText);
         });
 
+        orderDetails += itemListText.join(', ');
         text += `%0A*Total: ${formatPrice(total)}*`;
+
+        const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006';
+        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
 
         try {
             // Register order in Supabase
+            // Because 'detalhes' doesn't exist, we put everything into 'status' as a combined string.
             const { error } = await supabase
                 .from('pedidos')
                 .insert([{
                     valor_total: total,
-                    status: 'Novo Pedido',
-                    detalhes: orderDetails.trim()
+                    status: orderDetails.trim()
                 }]);
 
             if (error) {
-                console.error('Erro ao registrar pedido:', error);
-                throw error;
+                console.error('Erro ao registrar pedido no Supabase:', error);
+                // Alert the user but continue to WhatsApp anyway
+                alert('Aviso: Ocorreu um erro ao salvar o histórico do pedido, mas você será redirecionado para o WhatsApp normalmente.');
+            } else {
+                // Clear cart only if database insert succeeds cleanly or if you prefer to always clear it
+                if (clearCart) {
+                    clearCart();
+                }
             }
-
-            // Clear cart via prop if available (we should add this prop)
-            if (clearCart) {
-                clearCart();
-            }
-
-            // Redireciona para o WhatsApp (SÓ ACONTECE SE O INSERT ACIMA DER CERTO)
-            // Altere o número abaixo para o seu (com código do país 55 e DDD) 
-            // ou crie uma variável VITE_WHATSAPP_NUMBER no arquivo .env
-            const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006';
-            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
-            window.open(whatsappUrl, '_blank');
-
-            onClose();
-
         } catch (error) {
-            alert('Não foi possível registrar seu pedido. Tente novamente.');
+            console.error('Erro inesperado no checkout:', error);
+            alert('Aviso: Erro de conexão. Redirecionando para o WhatsApp preventivamente.');
         } finally {
             setIsCheckingOut(false);
+            // Always open WhatsApp and close modal, even on database failure (fallback mechanism)
+            window.open(whatsappUrl, '_blank');
+            onClose();
         }
     };
 
