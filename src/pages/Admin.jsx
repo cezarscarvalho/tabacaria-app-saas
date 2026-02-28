@@ -9,13 +9,14 @@ import Settings from '../components/admin/Settings';
 import Orders from '../components/admin/Orders';
 import Finance from '../components/admin/Finance';
 import PrintOrders from '../components/admin/PrintOrders';
-import { Plus, Package, RefreshCw, LayoutDashboard, LogOut, Users, Truck, Settings as SettingsIcon, ClipboardList, TrendingUp, Printer } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Messages from '../components/admin/Messages';
+import { Plus, Package, RefreshCw, LayoutDashboard, LogOut, Users, Truck, Settings as SettingsIcon, ClipboardList, TrendingUp, Printer, Mail } from 'lucide-react';
 
 export default function Admin() {
     const [session, setSession] = useState(null);
     const [forcePasswordChange, setForcePasswordChange] = useState(false);
-    const [activeTab, setActiveTab] = useState('orders'); // orders | products | clients | suppliers | settings
+    const [activeTab, setActiveTab] = useState('orders');
+    const [unreadMessages, setUnreadMessages] = useState(0);
 
     // Products State
     const [products, setProducts] = useState([]);
@@ -35,6 +36,31 @@ export default function Admin() {
 
         return () => subscription.unsubscribe();
     }, []);
+
+    // Fetch unread messages count
+    const fetchUnreadCount = async () => {
+        try {
+            const { count, error } = await supabase
+                .from('mensagens')
+                .select('*', { count: 'exact', head: true })
+                .eq('lida', false)
+                .eq('arquivada', false);
+
+            if (error) throw error;
+            setUnreadMessages(count || 0);
+        } catch (error) {
+            console.error('Erro ao buscar contador de mensagens:', error.message);
+        }
+    };
+
+    useEffect(() => {
+        if (session) {
+            fetchUnreadCount();
+            // Polling for new messages every 30 seconds
+            const interval = setInterval(fetchUnreadCount, 30000);
+            return () => clearInterval(interval);
+        }
+    }, [session]);
 
     const fetchProducts = async () => {
         setLoadingProducts(true);
@@ -56,6 +82,9 @@ export default function Admin() {
     useEffect(() => {
         if (session && activeTab === 'products') {
             fetchProducts();
+        }
+        if (session && activeTab === 'messages') {
+            fetchUnreadCount();
         }
     }, [session, activeTab]);
 
@@ -193,6 +222,8 @@ export default function Admin() {
         switch (activeTab) {
             case 'finance':
                 return <Finance />;
+            case 'messages':
+                return <Messages />;
             case 'print':
                 return <PrintOrders />;
             case 'orders':
@@ -228,6 +259,20 @@ export default function Admin() {
                         >
                             <TrendingUp size={18} className={activeTab === 'finance' ? 'text-dark-900' : ''} />
                             Financeiro
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('messages')}
+                            className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm w-full text-left ${activeTab === 'messages' ? 'bg-primary border border-primary/20 text-dark-900 shadow-sm' : 'text-neutral-400 hover:bg-dark-700/50 hover:text-white'}`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <Mail size={18} className={activeTab === 'messages' ? 'text-dark-900' : ''} />
+                                Mensagens
+                            </div>
+                            {unreadMessages > 0 && (
+                                <span className="bg-red-500 text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center animate-bounce shadow-lg shadow-red-500/20">
+                                    {unreadMessages}
+                                </span>
+                            )}
                         </button>
                         <button
                             onClick={() => setActiveTab('print')}

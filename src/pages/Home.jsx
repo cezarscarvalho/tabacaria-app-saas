@@ -6,11 +6,15 @@ import CartModal from '../components/CartModal';
 import CheckoutConfirmationModal from '../components/CheckoutConfirmationModal';
 import { Flame } from 'lucide-react';
 
+import SupportModal from '../components/SupportModal'; // Added import
+import { MessageCircle } from 'lucide-react'; // Added for the banner icon
+
 export default function Home() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [cart, setCart] = useState([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const [isSupportOpen, setIsSupportOpen] = useState(false); // Added state
 
     // Confirmation Modal States
     const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
@@ -110,6 +114,29 @@ export default function Home() {
 
             {/* Products Grid */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 pb-10">
+                {/* Premium Support Banner */}
+                <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-700">
+                    <div className="bg-gradient-to-r from-dark-800 to-dark-700 border border-primary/20 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-primary/10 transition-colors"></div>
+                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                            <div className="bg-primary/10 p-4 rounded-2xl border border-primary/20 shadow-inner">
+                                <MessageCircle className="text-primary" size={40} />
+                            </div>
+                            <div>
+                                <h2 className="text-2xl md:text-3xl font-black text-white mb-2 tracking-tight">Dúvidas ou não achou algo?</h2>
+                                <p className="text-neutral-400 max-w-lg">Fale conosco pelo nosso canal de suporte premium. Nossa equipe está pronta para te ajudar e ouvir suas sugestões!</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setIsSupportOpen(true)}
+                            className="relative z-10 bg-primary hover:bg-primary-hover text-dark-900 font-black py-4 px-8 rounded-2xl flex items-center gap-3 transition-all transform hover:scale-105 active:scale-95 shadow-xl shadow-primary/20 whitespace-nowrap"
+                        >
+                            <MessageCircle size={22} />
+                            Fale Conosco agora
+                        </button>
+                    </div>
+                </div>
+
                 <div className="flex items-center justify-between mb-8 flex-col sm:flex-row gap-4">
                     <h3 className="text-2xl font-bold text-white border-l-4 border-primary pl-3 w-full">Nossos Produtos</h3>
                 </div>
@@ -147,6 +174,11 @@ export default function Home() {
                 onClose={() => setIsConfirmationOpen(false)}
                 orderData={pendingOrder}
                 onConfirm={handleFinalConfirm}
+            />
+            {/* Support Modal */}
+            <SupportModal
+                isOpen={isSupportOpen}
+                onClose={() => setIsSupportOpen(false)}
             />
         </div>
     );
