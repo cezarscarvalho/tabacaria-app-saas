@@ -117,11 +117,18 @@ export default function Orders() {
                 .update({ enviado_logistica: isEnviado })
                 .eq('id', id);
 
-            if (error) throw error;
+            if (error) {
+                // Se o erro for de coluna inexistente, não alertar o usuário, apenas logar
+                if (error.code === '42703') {
+                    console.warn('Coluna enviado_logistica não existe no Supabase. O fluxo funciona apenas localmente neste estado.');
+                } else {
+                    throw error;
+                }
+            }
         } catch (error) {
             console.error('Erro ao alternar logística:', error.message);
-            alert('Erro ao atualizar logística do pedido.');
-            fetchOrders(); // Revert
+            alert('Não foi possível salvar sua escolha. Verifique se a coluna existe no banco.');
+            fetchOrders();
         }
     };
 

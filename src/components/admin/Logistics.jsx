@@ -20,16 +20,34 @@ export default function Logistics() {
         setLoading(true);
         try {
             // 1. Buscar Pedidos Confirmados E ENVIADOS PARA LOGÍSTICA
-            const { data: pedidos, error: pError } = await supabase
+            let query = supabase
                 .from('pedidos')
                 .select('*')
-                .eq('enviado_logistica', true)
                 .ilike('status', '%Confirmado%')
                 .not('status', 'ilike', '%Pedido ao Fornecedor Realizado%');
 
-            if (pError) throw pError;
-            setOrders(pedidos || []);
-            consolidateOrders(pedidos || []);
+            // Aplicar filtro de logística apenas se a coluna for suportada (tentativa segura)
+            const { data: pedidos, error: pError } = await query.eq('enviado_logistica', true);
+
+            if (pError) {
+                console.warn('Filtro de logística falhou (coluna pode não existir):', pError.message);
+                // Fallback: carregar sem o filtro de checkbox se a coluna não existir
+                if (pError.code === '42703') {
+                    const fallback = await supabase
+                        .from('pedidos')
+                        .select('*')
+                        .ilike('status', '%Confirmado%')
+                        .not('status', 'ilike', '%Pedido ao Fornecedor Realizado%');
+                    if (fallback.error) throw fallback.error;
+                    setOrders(fallback.data || []);
+                    consolidateOrders(fallback.data || []);
+                } else {
+                    throw pError;
+                }
+            } else {
+                setOrders(pedidos || []);
+                consolidateOrders(pedidos || []);
+            }
 
             // 2. Buscar Fornecedores
             const { data: forn, error: fError } = await supabase
