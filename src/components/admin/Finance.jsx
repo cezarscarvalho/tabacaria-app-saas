@@ -1,261 +1,64 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../../supabaseClient';
-import { TrendingUp, DollarSign, Calendar, Users, Award, BarChart3, Filter } from 'lucide-react';
+import React from 'react';
+import { TrendingUp, DollarSign, Calendar, Landmark, BarChart3 } from 'lucide-react';
 
-export default function Finance() {
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [filterDate, setFilterDate] = useState(''); // YYYY-MM format
+export default function Finance({ ordersData }) {
+    const orders = ordersData || [];
 
-    useEffect(() => {
-        fetchOrders();
-    }, []);
-
-    const fetchOrders = async () => {
-        setLoading(true);
-        try {
-            const { data, error } = await supabase
-                .from('pedidos')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error) throw error;
-
-            // Only count non-canceled orders for revenue
-            const validOrders = (data || []).filter(o => {
-                const s = o.status || '';
-                return !s.startsWith('Cancelado -') && s !== 'Cancelado';
-            });
-            setOrders(validOrders);
-        } catch (error) {
-            console.error('Erro ao buscar pedidos para o financeiro:', error.message);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const formatPrice = (price) => {
-        return new Intl.NumberFormat('pt-BR', {
-            style: 'currency',
-            currency: 'BRL'
-        }).format(price || 0);
-    };
-
-    // Helper to extract Name from the combined string
-    const extractCustomerName = (statusString) => {
-        if (!statusString) return 'Desconhecido';
-
-        // Handle "Confirmado pelo cliente | Loja: [Store] | Resp: [Name] - [Items]"
-        if (statusString.includes('Loja: ')) {
-            const storeMatch = statusString.match(/Loja:\s*(.*?)\s*\|/);
-            if (storeMatch) return storeMatch[1];
-        }
-
-        // Handle old "Confirmado pelo cliente: [Name] - [Items]"
-        if (statusString.includes('Confirmado pelo cliente: ')) {
-            const parts = statusString.split('Confirmado pelo cliente: ');
-            const content = parts[parts.length - 1];
-            return content.split(' - ')[0] || 'Desconhecido';
-        }
-
-        // Old format: "Novo Pedido - Cliente: [Nome] - Itens: [Items]"
-        const match = statusString.match(/Cliente: (.*?)( - Itens:|$)/);
-        return match ? match[1] : 'Desconhecido';
-    };
-
-    // Date calculations
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const [selectedYear, selectedMonth] = filterDate ? filterDate.split('-').map(Number) : [now.getFullYear(), now.getMonth() + 1];
-
-    // Filtered orders for specific analysis
-    const filteredOrders = orders.filter(order => {
-        const d = new Date(order.created_at);
-        if (filterDate) {
-            return d.getFullYear() === selectedYear && (d.getMonth() + 1) === selectedMonth;
-        }
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    // Cálculo Estático baseado nos dados do Pai
+    const confirmedOrders = orders.filter(o => {
+        const s = (o.status || '').toLowerCase();
+        return !s.includes('cancelado') && (s.includes('novo') || s.includes('entregue') || s.includes('finalizado') || s.includes('confirmado'));
     });
 
-    const monthlyRevenue = filteredOrders.reduce((sum, order) => sum + (Number(order.valor_total) || 0), 0);
-    const annualRevenue = orders
-        .filter(order => new Date(order.created_at).getFullYear() === currentYear)
-        .reduce((sum, order) => sum + (Number(order.valor_total) || 0), 0);
+    const totalRevenue = confirmedOrders.reduce((acc, curr) => acc + (Number(curr.valor_total) || 0), 0);
+    const avgTicket = confirmedOrders.length > 0 ? totalRevenue / confirmedOrders.length : 0;
 
-    const avgTicket = filteredOrders.length > 0 ? monthlyRevenue / filteredOrders.length : 0;
-
-    // Top 5 Clients
-    const getTopClients = () => {
-        const clientsMap = {};
-        orders.forEach(order => {
-            const name = extractCustomerName(order.status);
-            clientsMap[name] = (clientsMap[name] || 0) + (Number(order.valor_total) || 0);
-        });
-
-        return Object.entries(clientsMap)
-            .map(([name, total]) => ({ name, total }))
-            .sort((a, b) => b.total - a.total)
-            .slice(0, 5);
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
     };
-
-    const topClients = getTopClients();
-
-    // Chart Data (Last 6 months)
-    const getChartData = () => {
-        const data = [];
-        const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-
-        for (let i = 5; i >= 0; i--) {
-            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            const rMonth = d.getMonth();
-            const rYear = d.getFullYear();
-
-            const sum = orders
-                .filter(o => {
-                    const od = new Date(o.created_at);
-                    return od.getMonth() === rMonth && od.getFullYear() === rYear;
-                })
-                .reduce((acc, curr) => acc + (Number(curr.valor_total) || 0), 0);
-
-            data.push({
-                name: `${monthNames[rMonth]}`,
-                Total: sum,
-                isCurrent: rMonth === (selectedMonth - 1) && rYear === selectedYear
-            });
-        }
-        return data;
-    };
-
-    const chartData = getChartData();
-
-    // Unique month options for filter
-    const availableMonths = [...new Set(orders.map(o => {
-        const d = new Date(o.created_at);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    }))].sort((a, b) => b.localeCompare(a));
-
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
-            </div>
-        );
-    }
 
     return (
         <div className="animate-in fade-in duration-500">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                <div>
-                    <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                        <BarChart3 className="text-emerald-500" />
-                        Dashboard Financeiro
-                    </h1>
-                    <p className="text-neutral-400 text-sm mt-1">Inteligência de vendas e métricas de desempenho</p>
-                </div>
+            <h1 className="text-3xl font-black text-white tracking-tight uppercase mb-8 flex items-center gap-3">
+                <Landmark className="text-primary" /> Financeiro
+            </h1>
 
-                <div className="flex items-center gap-2 bg-dark-800 border border-dark-700 p-1.5 rounded-xl">
-                    <Filter size={16} className="ml-2 text-neutral-500" />
-                    <select
-                        value={filterDate}
-                        onChange={(e) => setFilterDate(e.target.value)}
-                        className="bg-transparent text-white text-sm font-medium outline-none pr-4 py-1.5 appearance-none cursor-pointer"
-                    >
-                        <option value="" className="bg-dark-800">Mês Atual</option>
-                        {availableMonths.map(m => {
-                            const [y, mm] = m.split('-');
-                            const d = new Date(y, mm - 1, 1);
-                            return (
-                                <option key={m} value={m} className="bg-dark-800">
-                                    {new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(d)}
-                                </option>
-                            );
-                        })}
-                    </select>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {/* Monthly Card */}
-                <div className="bg-dark-800 border border-dark-700 p-6 rounded-2xl shadow-lg relative group transition-all hover:border-emerald-500/30">
-                    <div className="absolute -right-2 -top-2 w-16 h-16 bg-emerald-500/5 rounded-full blur-xl group-hover:bg-emerald-500/10 transition-all"></div>
-                    <p className="text-neutral-400 text-sm font-medium mb-1">Faturamento {filterDate ? 'do Período' : 'Mensal'}</p>
-                    <h3 className="text-3xl font-black text-white">{formatPrice(monthlyRevenue)}</h3>
-                    <div className="mt-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-500/70">
-                        <Calendar size={14} />
-                        {filterDate ? 'Filtro Ativo' : 'Mês Vigente'}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+                <div className="bg-dark-800 border-2 border-dark-700 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 text-primary opacity-10 group-hover:scale-125 transition-transform"><DollarSign size={80} /></div>
+                    <p className="text-neutral-500 text-[10px] font-black uppercase tracking-widest mb-2 font-mono">Faturamento Total</p>
+                    <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase">{formatPrice(totalRevenue)}</h3>
+                    <div className="mt-8 flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-emerald-500">
+                        <TrendingUp size={14} /> Somatório de Confirmados
                     </div>
                 </div>
 
-                {/* Ticket Médio Card */}
-                <div className="bg-dark-800 border border-dark-700 p-6 rounded-2xl shadow-lg relative group transition-all hover:border-emerald-500/30">
-                    <div className="absolute -right-2 -top-2 w-16 h-16 bg-blue-500/5 rounded-full blur-xl group-hover:bg-blue-500/10 transition-all"></div>
-                    <p className="text-neutral-400 text-sm font-medium mb-1">Ticket Médio</p>
-                    <h3 className="text-3xl font-black text-white">{formatPrice(avgTicket)}</h3>
-                    <div className="mt-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-400/70">
-                        <TrendingUp size={14} />
-                        Média por Venda
+                <div className="bg-dark-800 border-2 border-dark-700 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 text-blue-500 opacity-10 group-hover:scale-125 transition-transform"><BarChart3 size={80} /></div>
+                    <p className="text-neutral-500 text-[10px] font-black uppercase tracking-widest mb-2 font-mono">Ticket Médio</p>
+                    <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase">{formatPrice(avgTicket)}</h3>
+                    <div className="mt-8 flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-blue-400">
+                        <Calendar size={14} /> Média por Operação
                     </div>
                 </div>
 
-                {/* Annual Card */}
-                <div className="bg-dark-800 border border-dark-700 p-6 rounded-2xl shadow-lg relative group transition-all hover:border-emerald-500/30">
-                    <div className="absolute -right-2 -top-2 w-16 h-16 bg-primary/5 rounded-full blur-xl group-hover:bg-primary/10 transition-all"></div>
-                    <p className="text-neutral-400 text-sm font-medium mb-1">Faturamento Anual</p>
-                    <h3 className="text-3xl font-black text-white">{formatPrice(annualRevenue)}</h3>
-                    <div className="mt-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-primary/70">
-                        <DollarSign size={14} />
-                        Ano {currentYear}
+                <div className="bg-dark-800 border-2 border-dark-700 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-8 text-primary opacity-10 group-hover:scale-125 transition-transform"><ClipboardCheck size={80} /></div>
+                    <p className="text-neutral-500 text-[10px] font-black uppercase tracking-widest mb-2 font-mono">Volume de Vendas</p>
+                    <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase">{confirmedOrders.length} <span className="text-sm">PEDIDOS</span></h3>
+                    <div className="mt-8 flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-white/50">
+                        <Package size={14} /> Fluxo Validado
                     </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Performance Summary Section */}
-                <div className="lg:col-span-2 bg-dark-800 border border-dark-700 p-6 rounded-2xl shadow-lg">
-                    <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                        Resumo de Desempenho (Últimos 6 meses)
-                    </h3>
-                    <div className="space-y-4">
-                        {chartData.map((data, index) => (
-                            <div key={index} className={`flex items-center justify-between p-4 rounded-xl border ${data.isCurrent ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-dark-900/50 border-dark-700'}`}>
-                                <span className={`font-bold ${data.isCurrent ? 'text-emerald-400' : 'text-neutral-400'}`}>{data.name}</span>
-                                <span className={`font-black ${data.isCurrent ? 'text-white' : 'text-neutral-300'}`}>{formatPrice(data.Total)}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Top Clients Section */}
-                <div className="bg-dark-800 border border-dark-700 p-6 rounded-2xl shadow-lg">
-                    <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                        <Award className="text-yellow-500" size={20} />
-                        Top 5 Clientes
-                    </h3>
-                    <div className="space-y-4">
-                        {topClients.map((client, index) => (
-                            <div key={client.name} className="flex items-center justify-between p-3 bg-dark-900/50 border border-dark-700 rounded-xl group hover:border-emerald-500/20 transition-all">
-                                <div className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${index === 0 ? 'bg-yellow-500/20 text-yellow-500' :
-                                        index === 1 ? 'bg-neutral-400/20 text-neutral-400' :
-                                            index === 2 ? 'bg-amber-700/20 text-amber-700' :
-                                                'bg-dark-700 text-neutral-500'
-                                        }`}>
-                                        {index + 1}
-                                    </div>
-                                    <div className="overflow-hidden">
-                                        <p className="text-white font-semibold truncate max-w-[120px]">{client.name}</p>
-                                        <p className="text-neutral-500 text-xs">Fiel ao caixa</p>
-                                    </div>
-                                </div>
-                                <p className="text-emerald-400 font-bold">{formatPrice(client.total)}</p>
-                            </div>
-                        ))}
-                        {topClients.length === 0 && (
-                            <p className="text-center text-neutral-500 py-10">Nenhum dado de cliente encontrado.</p>
-                        )}
-                    </div>
-                </div>
+            <div className="bg-primary/5 border-2 border-dashed border-primary/20 rounded-[3rem] p-12 text-center">
+                <p className="text-primary font-black uppercase tracking-widest text-sm mb-4">Inteligência Financeira Estática</p>
+                <p className="text-neutral-500 max-w-sm mx-auto text-xs font-bold leading-relaxed uppercase">Os números acima são calculados diretamente da base centralizada no Admin para garantir 0% de latência e 100% de estabilidade.</p>
             </div>
         </div>
     );
 }
+
+// Helper para o ícone que falta no import
+import { Package, ClipboardCheck } from 'lucide-react';
