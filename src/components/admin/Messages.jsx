@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { Mail, MailOpen, Trash2, CheckCircle, Clock } from 'lucide-react';
+import { Mail, MailOpen, Trash2, CheckCircle, Clock, MessageCircle } from 'lucide-react';
 
 export default function Messages() {
     const [messages, setMessages] = useState([]);
@@ -39,6 +39,50 @@ export default function Messages() {
             setMessages(messages.map(m => m.id === id ? { ...m, lida: !currentStatus } : m));
         } catch (error) {
             console.error('Erro ao atualizar status da mensagem:', error.message);
+        }
+    };
+
+    const handleReply = async (msg) => {
+        try {
+            // 1. Mark as read immediately to give feedback and clear alerts
+            if (!msg.lida) {
+                await toggleRead(msg.id, false);
+            }
+
+            // 2. Lookup client WhatsApp
+            const { data: clients, error } = await supabase
+                .from('clientes')
+                .select('whatsapp')
+                .or(`nome.ilike.%${msg.nome}%,estabelecimento.ilike.%${msg.estabelecimento}%`)
+                .eq('ativo', true)
+                .limit(1);
+
+            let phone = '';
+            if (clients && clients.length > 0) {
+                phone = clients[0].whatsapp.replace(/\D/g, '');
+            }
+
+            if (!phone) {
+                const manualPhone = prompt('Não encontramos o WhatsApp deste cliente no cadastro. Por favor, digite o número (com DDD) para responder:');
+                if (!manualPhone) return;
+                phone = manualPhone.replace(/\D/g, '');
+            }
+
+            // Ensure country code
+            if (phone.length === 11 && !phone.startsWith('55')) {
+                phone = '55' + phone;
+            }
+
+            // 3. Format message with citation
+            const citation = `> ${msg.mensagem}`;
+            const text = `Olá *${msg.estabelecimento}*, respondendo sua dúvida sobre *${msg.assunto}*:%0A%0A${citation}%0A%0A*Sua Resposta:* `;
+
+            const whatsappUrl = `https://wa.me/${phone}?text=${text}`;
+            window.open(whatsappUrl, '_blank');
+
+        } catch (error) {
+            console.error('Erro ao processar resposta:', error);
+            alert('Erro ao processar resposta via WhatsApp.');
         }
     };
 
@@ -151,6 +195,13 @@ export default function Messages() {
                                 </div>
 
                                 <div className="flex md:flex-col gap-2 justify-end">
+                                    <button
+                                        onClick={() => handleReply(msg)}
+                                        className="p-3 bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30 rounded-xl transition-all"
+                                        title="Responder via WhatsApp"
+                                    >
+                                        <MessageCircle size={20} />
+                                    </button>
                                     <button
                                         onClick={() => toggleRead(msg.id, msg.lida)}
                                         className={`p-3 rounded-xl transition-all ${msg.lida ? 'bg-dark-700 text-neutral-400 hover:text-white' : 'bg-primary/20 text-primary hover:bg-primary/30'}`}
