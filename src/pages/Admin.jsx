@@ -10,7 +10,9 @@ import Orders from '../components/admin/Orders';
 import Finance from '../components/admin/Finance';
 import PrintOrders from '../components/admin/PrintOrders';
 import Messages from '../components/admin/Messages';
-import { Plus, Package, RefreshCw, LayoutDashboard, LogOut, Users, Truck, Settings as SettingsIcon, ClipboardList, TrendingUp, Printer, Mail } from 'lucide-react';
+import Collections from '../components/admin/Collections';
+import Logistics from '../components/admin/Logistics';
+import { Plus, Package, RefreshCw, LayoutDashboard, LogOut, Users, Truck, Settings as SettingsIcon, ClipboardList, TrendingUp, Printer, Mail, HandCoins, Boxes } from 'lucide-react';
 
 export default function Admin() {
     const [session, setSession] = useState(null);
@@ -232,8 +234,12 @@ export default function Admin() {
         switch (activeTab) {
             case 'finance':
                 return <Finance />;
+            case 'billing':
+                return <Collections />;
             case 'messages':
                 return <Messages />;
+            case 'logistics':
+                return <Logistics />;
             case 'print':
                 return <PrintOrders />;
             case 'orders':
@@ -271,6 +277,13 @@ export default function Admin() {
                             Financeiro
                         </button>
                         <button
+                            onClick={() => setActiveTab('billing')}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm w-full text-left ${activeTab === 'billing' ? 'bg-primary border border-primary/20 text-dark-900 shadow-sm' : 'text-neutral-400 hover:bg-dark-700/50 hover:text-white'}`}
+                        >
+                            <HandCoins size={18} className={activeTab === 'billing' ? 'text-dark-900' : ''} />
+                            Cobrança Ativa
+                        </button>
+                        <button
                             onClick={() => setActiveTab('messages')}
                             className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm w-full text-left ${activeTab === 'messages' ? 'bg-primary border border-primary/20 text-dark-900 shadow-sm' : unreadMessages > 0 ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20 shadow-lg shadow-amber-400/5' : 'text-neutral-400 hover:bg-dark-700/50 hover:text-white'}`}
                         >
@@ -283,6 +296,13 @@ export default function Admin() {
                                     {unreadMessages}
                                 </span>
                             )}
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('logistics')}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm w-full text-left ${activeTab === 'logistics' ? 'bg-primary border border-primary/20 text-dark-900 shadow-sm' : 'text-neutral-400 hover:bg-dark-700/50 hover:text-white'}`}
+                        >
+                            <Boxes size={18} className={activeTab === 'logistics' ? 'text-dark-900' : ''} />
+                            Logística
                         </button>
                         <button
                             onClick={() => setActiveTab('print')}
