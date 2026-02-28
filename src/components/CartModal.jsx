@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Plus, Minus, Trash2, MessageCircle } from 'lucide-react';
+import { supabase } from '../supabaseClient';
 
-export default function CartModal({ isOpen, onClose, cart, updateQuantity, removeItem }) {
+export default function CartModal({ isOpen, onClose, cart, updateQuantity, removeItem, clearCart }) {
+    const [isCheckingOut, setIsCheckingOut] = useState(false);
+
     if (!isOpen) return null;
 
     const total = cart.reduce((acc, item) => acc + (item.preco_venda * item.quantidade), 0);
@@ -14,20 +17,51 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
         }).format(isNaN(validPrice) ? 0 : validPrice);
     };
 
-    const handleCheckout = () => {
+    const handleCheckout = async () => {
+        setIsCheckingOut(true);
         let text = 'Olá! Gostaria de fazer o pedido:%0A%0A';
+        let orderDetails = '';
 
         cart.forEach(item => {
-            text += `${item.quantidade}x ${item.nome} (${formatPrice(item.preco_venda)})%0A`;
+            const itemText = `${item.quantidade}x ${item.nome} (${formatPrice(item.preco_venda)})`;
+            text += itemText + '%0A';
+            orderDetails += itemText + '\n';
         });
 
         text += `%0A*Total: ${formatPrice(total)}*`;
 
-        // Replace with the desired generic number
-        const phoneNumber = '5511999999999';
-        const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
+        try {
+            // Register order in Supabase
+            const { error } = await supabase
+                .from('pedidos')
+                .insert([{
+                    valor_total: total,
+                    status: 'Novo Pedido',
+                    detalhes: orderDetails.trim()
+                }]);
 
-        window.open(whatsappUrl, '_blank');
+            if (error) {
+                console.error('Erro ao registrar pedido:', error);
+                throw error;
+            }
+
+            // Clear cart via prop if available (we should add this prop)
+            if (clearCart) {
+                clearCart();
+            }
+
+            // Redirect to WhatsApp
+            const phoneNumber = '5511999999999';
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
+            window.open(whatsappUrl, '_blank');
+
+            onClose();
+
+        } catch (error) {
+            alert('Não foi possível registrar seu pedido. Tente novamente.');
+        } finally {
+            setIsCheckingOut(false);
+        }
     };
 
     return (
@@ -106,10 +140,17 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
 
                         <button
                             onClick={handleCheckout}
-                            className="w-full bg-[#25D366] hover:bg-[#1ebd5c] text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg shadow-[#25D366]/20"
+                            disabled={isCheckingOut}
+                            className="w-full bg-[#25D366] hover:bg-[#1ebd5c] text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg shadow-[#25D366]/20 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                            <MessageCircle size={20} />
-                            Finalizar Pedido via WhatsApp
+                            {isCheckingOut ? (
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            ) : (
+                                <>
+                                    <MessageCircle size={20} />
+                                    Finalizar Pedido via WhatsApp
+                                </>
+                            )}
                         </button>
                     </div>
                 )}

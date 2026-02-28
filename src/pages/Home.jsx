@@ -60,6 +60,10 @@ export default function Home() {
         setCart(prevCart => prevCart.filter(item => item.id !== productId));
     };
 
+    const clearCart = () => {
+        setCart([]);
+    };
+
     return (
         <div className="min-h-screen bg-dark-900 pb-20 relative">
             {/* Header */}
@@ -114,6 +118,7 @@ export default function Home() {
                 cart={cart}
                 updateQuantity={updateQuantity}
                 removeItem={removeItem}
+                clearCart={clearCart}
             />
         </div>
     );
