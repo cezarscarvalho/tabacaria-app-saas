@@ -30,19 +30,27 @@ export default function SupportModal({ isOpen, onClose }) {
         }
 
         setIsSubmitting(true);
+        const payload = {
+            nome: formData.nome,
+            estabelecimento: formData.estabelecimento,
+            assunto: formData.assunto,
+            mensagem: formData.mensagem,
+            lida: false
+        };
+
+        console.log('Tentando salvar mensagem no Supabase:', payload);
+
         try {
             // 1. Save to Supabase
             const { error } = await supabase
                 .from('mensagens')
-                .insert([{
-                    nome: formData.nome,
-                    estabelecimento: formData.estabelecimento,
-                    assunto: formData.assunto,
-                    mensagem: formData.mensagem,
-                    lida: false
-                }]);
+                .insert([payload]);
 
-            if (error) throw error;
+            if (error) {
+                console.error('Erro retornado pelo Supabase:', error);
+                alert(`Erro ao gravar no banco: ${error.message}`);
+                throw error;
+            }
 
             // 2. Format WhatsApp message
             const text = `*NOVA MENSAGEM DE SUPORTE*%0A%0A*De:* ${formData.nome}%0A*Loja:* ${formData.estabelecimento}%0A*Assunto:* ${formData.assunto}%0A%0A*Mensagem:*%0A${formData.mensagem}`;
@@ -53,7 +61,7 @@ export default function SupportModal({ isOpen, onClose }) {
             // 3. Open WhatsApp
             window.open(whatsappUrl, '_blank');
 
-            alert('Mensagem enviada!');
+            alert('Mensagem enviada com sucesso ao banco!');
             setIsSuccess(true);
             setTimeout(() => {
                 setIsSuccess(false);

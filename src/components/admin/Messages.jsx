@@ -87,6 +87,11 @@ export default function Messages() {
         return !m.arquivada;
     });
 
+    const testSound = () => {
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+        audio.play().catch(e => alert('Erro ao tocar som. O navegador pode estar bloqueando: ' + e.message));
+    };
+
     return (
         <div className="animate-in fade-in duration-300">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -95,25 +100,35 @@ export default function Messages() {
                     <p className="text-neutral-400 text-sm mt-1">Gerencie os contatos e sugestões dos clientes</p>
                 </div>
 
-                <div className="flex bg-dark-800 p-1 rounded-xl border border-dark-700">
+                <div className="flex flex-wrap gap-3">
                     <button
-                        onClick={() => setFilter('all')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === 'all' ? 'bg-primary text-dark-900 shadow-lg' : 'text-neutral-400 hover:text-white'}`}
+                        onClick={testSound}
+                        className="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-xl text-sm font-bold border border-dark-600 transition-all flex items-center gap-2"
                     >
-                        Todas
+                        <CheckCircle size={16} />
+                        Testar Som
                     </button>
-                    <button
-                        onClick={() => setFilter('unread')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === 'unread' ? 'bg-primary text-dark-900 shadow-lg' : 'text-neutral-400 hover:text-white'}`}
-                    >
-                        Não Lidas
-                    </button>
-                    <button
-                        onClick={() => setFilter('archived')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === 'archived' ? 'bg-primary text-dark-900 shadow-lg' : 'text-neutral-400 hover:text-white'}`}
-                    >
-                        Arquivadas
-                    </button>
+
+                    <div className="flex bg-dark-800 p-1 rounded-xl border border-dark-700">
+                        <button
+                            onClick={() => setFilter('all')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === 'all' ? 'bg-primary text-dark-900 shadow-lg' : 'text-neutral-400 hover:text-white'}`}
+                        >
+                            Todas
+                        </button>
+                        <button
+                            onClick={() => setFilter('unread')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === 'unread' ? 'bg-primary text-dark-900 shadow-lg' : 'text-neutral-400 hover:text-white'}`}
+                        >
+                            Não Lidas
+                        </button>
+                        <button
+                            onClick={() => setFilter('archived')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${filter === 'archived' ? 'bg-primary text-dark-900 shadow-lg' : 'text-neutral-400 hover:text-white'}`}
+                        >
+                            Arquivadas
+                        </button>
+                    </div>
                 </div>
             </div>
 
