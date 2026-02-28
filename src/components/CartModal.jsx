@@ -50,8 +50,10 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
                 clearCart();
             }
 
-            // Redirect to WhatsApp
-            const phoneNumber = '5511999999999';
+            // Redireciona para o WhatsApp (SÓ ACONTECE SE O INSERT ACIMA DER CERTO)
+            // Altere o número abaixo para o seu (com código do país 55 e DDD) 
+            // ou crie uma variável VITE_WHATSAPP_NUMBER no arquivo .env
+            const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5511999999999';
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
             window.open(whatsappUrl, '_blank');
 
