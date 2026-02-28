@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { X, Plus, Minus, Trash2, MessageCircle } from 'lucide-react';
-import { supabase } from '../supabaseClient';
 
-export default function CartModal({ isOpen, onClose, cart, updateQuantity, removeItem, clearCart }) {
+export default function CartModal({ isOpen, onClose, cart, updateQuantity, removeItem, onCheckoutStarted }) {
     const [isCheckingOut, setIsCheckingOut] = useState(false);
     const [customerName, setCustomerName] = useState('');
 
@@ -44,29 +43,22 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
             const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006';
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
 
-            // 2. Open WhatsApp (Must be triggered directly by user action to avoid popup blockers)
+            // 2. Open WhatsApp (Must be triggered directly by user action)
             const whatsappWindow = window.open(whatsappUrl, '_blank');
 
             if (!whatsappWindow) {
                 throw new Error('Não foi possível abrir o WhatsApp. Verifique se o navegador bloqueou o popup.');
             }
 
-            // 3. Register order in Supabase only if redirect was initiated
-            const { error } = await supabase
-                .from('pedidos')
-                .insert([{
-                    valor_total: total,
+            // 3. Instead of registering, we notify the parent (Home) to show the confirmation modal
+            if (onCheckoutStarted) {
+                onCheckoutStarted({
+                    total: total,
                     status: orderDetails.trim()
-                }]);
-
-            if (error) {
-                console.error('Erro ao registrar pedido no banco:', error);
-                // Even if database fails here, we don't alert the customer to avoid friction,
-                // since the WhatsApp window is already open.
+                });
             }
 
             // 4. Success and Clean up
-            if (clearCart) clearCart();
             onClose();
 
         } catch (error) {

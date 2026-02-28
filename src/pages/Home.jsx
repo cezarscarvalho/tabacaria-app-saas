@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import ProductCard from '../components/ProductCard';
 import CartFAB from '../components/CartFAB';
 import CartModal from '../components/CartModal';
+import CheckoutConfirmationModal from '../components/CheckoutConfirmationModal';
 import { Flame } from 'lucide-react';
 
 export default function Home() {
@@ -10,6 +11,10 @@ export default function Home() {
     const [loading, setLoading] = useState(true);
     const [cart, setCart] = useState([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
+
+    // Confirmation Modal States
+    const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+    const [pendingOrder, setPendingOrder] = useState(null);
 
     const fetchProducts = async () => {
         try {
@@ -62,6 +67,22 @@ export default function Home() {
 
     const clearCart = () => {
         setCart([]);
+    };
+
+    // Called by CartModal when user clicks "Finalizar" and WhatsApp is opened
+    const handleCheckoutStarted = (orderData) => {
+        setPendingOrder(orderData);
+        setIsCartOpen(false);
+        // Small delay to ensure WhatsApp opens first
+        setTimeout(() => {
+            setIsConfirmationOpen(true);
+        }, 500);
+    };
+
+    const handleFinalConfirm = () => {
+        setIsConfirmationOpen(false);
+        setPendingOrder(null);
+        clearCart();
     };
 
     return (
@@ -118,8 +139,16 @@ export default function Home() {
                 cart={cart}
                 updateQuantity={updateQuantity}
                 removeItem={removeItem}
-                clearCart={clearCart}
+                onCheckoutStarted={handleCheckoutStarted}
+            />
+
+            <CheckoutConfirmationModal
+                isOpen={isConfirmationOpen}
+                onClose={() => setIsConfirmationOpen(false)}
+                orderData={pendingOrder}
+                onConfirm={handleFinalConfirm}
             />
         </div>
     );
 }
+
