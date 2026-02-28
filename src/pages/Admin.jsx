@@ -1,13 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import ProductModal from '../components/ProductModal';
-import { Plus, Package, RefreshCw, LayoutDashboard } from 'lucide-react';
+import Login from '../components/Login';
+import { Plus, Package, RefreshCw, LayoutDashboard, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Admin() {
+    const [session, setSession] = useState(null);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+        });
+
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
 
     const fetchProducts = async () => {
         setLoading(true);
@@ -27,8 +43,14 @@ export default function Admin() {
     };
 
     useEffect(() => {
-        fetchProducts();
-    }, []);
+        if (session) {
+            fetchProducts();
+        }
+    }, [session]);
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+    };
 
     const formatPrice = (price) => {
         return new Intl.NumberFormat('pt-BR', {
@@ -37,10 +59,14 @@ export default function Admin() {
         }).format(price || 0);
     };
 
+    if (!session) {
+        return <Login onLogin={setSession} />;
+    }
+
     return (
         <div className="min-h-screen bg-dark-900 text-neutral-200">
             {/* Navbar */}
-            <nav className="bg-dark-800 border-b border-dark-700">
+            <nav className="bg-dark-800 border-b border-dark-700 sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Package className="text-primary" />
@@ -51,7 +77,12 @@ export default function Admin() {
                             <LayoutDashboard size={16} /> Ver Loja
                         </Link>
                         <div className="h-4 w-px bg-dark-600"></div>
-                        <div className="text-sm text-neutral-400">Admin</div>
+                        <button
+                            onClick={handleLogout}
+                            className="text-sm font-medium text-red-400 hover:text-red-300 transition-colors flex items-center gap-1 p-1 bg-red-400/10 hover:bg-red-400/20 rounded-lg pr-3 pl-2"
+                        >
+                            <LogOut size={16} /> Sair
+                        </button>
                     </div>
                 </div>
             </nav>
