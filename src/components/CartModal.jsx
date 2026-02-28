@@ -4,6 +4,7 @@ import { X, Plus, Minus, Trash2, MessageCircle } from 'lucide-react';
 export default function CartModal({ isOpen, onClose, cart, updateQuantity, removeItem, onCheckoutStarted }) {
     const [isCheckingOut, setIsCheckingOut] = useState(false);
     const [customerName, setCustomerName] = useState('');
+    const [storeName, setStoreName] = useState('');
 
     if (!isOpen) return null;
 
@@ -18,8 +19,8 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
     };
 
     const handleCheckout = async () => {
-        if (!customerName.trim()) {
-            alert('Por favor, informe seu nome para continuarmos com o pedido.');
+        if (!customerName.trim() || !storeName.trim()) {
+            alert('Por favor, preencha seu nome e o nome da loja para continuarmos com o pedido.');
             return;
         }
 
@@ -27,8 +28,7 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
 
         try {
             // 1. Generate the WhatsApp message
-            let text = `Olá! Meu nome é *${customerName.trim()}* e gostaria de fazer o pedido:%0A%0A`;
-            let orderDetails = `Novo Pedido - Cliente: ${customerName.trim()} - Itens: `;
+            let text = `Olá!%0A%0A*Loja:* ${storeName.trim()}%0A*Responsável:* ${customerName.trim()}%0A%0AGostaria de fazer o pedido:%0A%0A`;
 
             let itemListText = [];
             cart.forEach(item => {
@@ -50,11 +50,12 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
                 onCheckoutStarted({
                     total: total,
                     customerName: customerName.trim(),
+                    storeName: storeName.trim(),
                     items: itemListText.join(', ')
                 });
             }
 
-            // 4. Success and Clean up
+            // 4. Close self
             onClose();
 
         } catch (error) {
@@ -134,34 +135,49 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
 
                 {cart.length > 0 && (
                     <div className="p-5 border-t border-dark-700 bg-dark-900/50 mt-auto">
-                        <div className="mb-4">
-                            <label htmlFor="customerName" className="block text-sm font-medium text-neutral-400 mb-1">
-                                Seu Nome
-                            </label>
-                            <input
-                                type="text"
-                                id="customerName"
-                                value={customerName}
-                                onChange={(e) => setCustomerName(e.target.value)}
-                                placeholder="Como prefere ser chamado?"
-                                className="w-full bg-dark-800 border border-dark-600 rounded-xl px-4 py-2.5 text-white outline-none focus:border-primary transition-colors placeholder:text-neutral-600"
-                            />
+                        <div className="space-y-3 mb-4">
+                            <div>
+                                <label htmlFor="storeName" className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1">
+                                    Nome do Estabelecimento *
+                                </label>
+                                <input
+                                    type="text"
+                                    id="storeName"
+                                    value={storeName}
+                                    onChange={(e) => setStoreName(e.target.value)}
+                                    placeholder="Nome da sua loja/comércio"
+                                    className="w-full bg-dark-800 border border-dark-600 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-primary transition-colors placeholder:text-neutral-600"
+                                />
+                            </div>
+                            <div>
+                                <label htmlFor="customerName" className="block text-xs font-medium text-neutral-500 uppercase tracking-wider mb-1">
+                                    Seu Nome (Responsável) *
+                                </label>
+                                <input
+                                    type="text"
+                                    id="customerName"
+                                    value={customerName}
+                                    onChange={(e) => setCustomerName(e.target.value)}
+                                    placeholder="Como prefere ser chamado?"
+                                    className="w-full bg-dark-800 border border-dark-600 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-primary transition-colors placeholder:text-neutral-600"
+                                />
+                            </div>
                         </div>
 
-                        <div className="flex justify-between items-center mb-4">
-                            <span className="text-neutral-400">Total</span>
+                        <div className="flex justify-between items-center mb-4 px-1">
+                            <span className="text-neutral-400">Total do Pedido</span>
                             <span className="text-2xl font-bold text-white">{formatPrice(total)}</span>
                         </div>
 
                         <button
                             onClick={handleCheckout}
                             disabled={isCheckingOut}
-                            className="w-full bg-[#25D366] hover:bg-[#1ebd5c] text-white font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg shadow-[#25D366]/20 disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="w-full bg-[#25D366] hover:bg-[#20bd5b] text-white font-bold py-4 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#25D366]/20 active:scale-[0.98] disabled:opacity-70"
                         >
                             {isCheckingOut ? (
                                 <div className="flex items-center gap-2">
                                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                    <span>Enviando seu pedido...</span>
+                                    <span>Iniciando WhatsApp...</span>
                                 </div>
                             ) : (
                                 <>

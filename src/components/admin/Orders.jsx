@@ -75,19 +75,16 @@ export default function Orders() {
                 'Confirmado - ' // Badge version in PrintOrders
             ];
 
-            for (const status of statusesToRemove) {
-                if (baseDetails?.startsWith(status)) {
-                    baseDetails = baseDetails.substring(status.length);
-                    break;
-                }
-            }
-
-            // Handle the specific "Confirmado pelo cliente: [Name] - [Items]" prefix
-            if (baseDetails?.startsWith('Confirmado pelo cliente: ')) {
+            // Handle the specific formats
+            if (baseDetails?.includes('Confirmado pelo cliente | Loja: ')) {
+                // Keep everything after the confirmed prefix as the base details
+                const parts = baseDetails.split('Confirmado pelo cliente | ');
+                baseDetails = parts[parts.length - 1];
+            } else if (baseDetails?.startsWith('Confirmado pelo cliente: ')) {
                 baseDetails = baseDetails.substring('Confirmado pelo cliente: '.length);
             }
 
-            // If it doesn't start with any known prefix, it's just the raw details (like from our new insert)
+            // If it doesn't start with any known prefix, it's just the raw details
             const updatedStatusString = `${newStatus} - ${baseDetails}`;
 
             // Optimistic UI update
@@ -218,7 +215,7 @@ export default function Orders() {
                                                 else if (s.startsWith('Cancelado -')) currentBadgeStatus = 'Cancelado';
                                                 else if (s.startsWith('Impresso -')) currentBadgeStatus = 'Impresso';
                                                 else if (s.startsWith('Finalizado -')) currentBadgeStatus = 'Finalizado';
-                                                else if (s.startsWith('Confirmado pelo cliente:')) currentBadgeStatus = 'Novo Pedido'; // Treat initial confirmation as "New"
+                                                else if (s.includes('Confirmado pelo cliente')) currentBadgeStatus = 'Novo Pedido';
                                                 else if (s.startsWith('Novo Pedido -')) currentBadgeStatus = 'Novo Pedido';
                                                 // Default to Novo Pedido if no known prefix is found
 

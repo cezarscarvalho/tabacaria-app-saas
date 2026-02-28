@@ -11,7 +11,7 @@ export default function CheckoutConfirmationModal({ isOpen, onClose, orderData, 
     const handleConfirm = async () => {
         setIsLoading(true);
         try {
-            const statusString = `Confirmado pelo cliente: ${orderData.customerName} - ${orderData.items}`;
+            const statusString = `Confirmado pelo cliente | Loja: ${orderData.storeName} | Resp: ${orderData.customerName} - ${orderData.items}`;
 
             const { error } = await supabase
                 .from('pedidos')

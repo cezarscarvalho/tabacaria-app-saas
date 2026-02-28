@@ -60,7 +60,7 @@ export default function PrintOrders() {
 
     // Helper to extract Name and Status from the new combined string
     const extractOrderInfo = (statusString) => {
-        if (!statusString) return { badgeStatus: 'Novo Pedido', customerName: 'Desconhecido', itemsText: '' };
+        if (!statusString) return { badgeStatus: 'Novo Pedido', customerName: 'Desconhecido', storeName: '', itemsText: '' };
 
         let badgeStatus = 'Novo Pedido';
         let remaining = statusString;
@@ -74,15 +74,29 @@ export default function PrintOrders() {
             }
         }
 
-        // New format: "Confirmado pelo cliente: [Nome] - [Items]"
-        if (remaining.startsWith('Confirmado pelo cliente: ')) {
-            const content = remaining.substring('Confirmado pelo cliente: '.length);
-            const [name, ...rest] = content.split(' - ');
-            return {
-                badgeStatus: 'Confirmado',
-                customerName: name || 'Desconhecido',
-                itemsText: rest.join(' - ') || ''
-            };
+        // New format: "Confirmado pelo cliente | Loja: [Nome] | Resp: [Nome] - [Items]"
+        if (remaining.includes('Confirmado pelo cliente')) {
+            const confirmedMatch = remaining.match(/Confirmado pelo cliente\s*\|?\s*Loja:\s*(.*?)\s*\|\s*Resp:\s*(.*?)\s*-\s*(.*)$/);
+            if (confirmedMatch) {
+                return {
+                    badgeStatus: 'Confirmado',
+                    storeName: confirmedMatch[1],
+                    customerName: confirmedMatch[2],
+                    itemsText: confirmedMatch[3]
+                };
+            }
+
+            // Fallback for simple confirmation without pipes if it ever happens
+            if (remaining.startsWith('Confirmado pelo cliente: ')) {
+                const content = remaining.substring('Confirmado pelo cliente: '.length);
+                const [name, ...rest] = content.split(' - ');
+                return {
+                    badgeStatus: 'Confirmado',
+                    customerName: name || 'Desconhecido',
+                    storeName: '',
+                    itemsText: rest.join(' - ') || ''
+                };
+            }
         }
 
         // Old formats
@@ -95,7 +109,7 @@ export default function PrintOrders() {
             itemsText = clienteMatch[3] || '';
         }
 
-        return { badgeStatus, customerName, itemsText };
+        return { badgeStatus, customerName, storeName: '', itemsText };
     };
 
     const handlePrintOne = (order) => {
@@ -141,8 +155,10 @@ export default function PrintOrders() {
     const filteredOrders = orders.filter(order => {
         const info = extractOrderInfo(order.status);
 
-        // Search Filter (by Customer Name or part of string)
-        const matchesSearch = info.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        // Search Filter (by Customer Name, Store Name, or part of string)
+        const matchesSearch =
+            info.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            info.storeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (order.status && order.status.toLowerCase().includes(searchTerm.toLowerCase()));
 
         // Status Filter
@@ -302,8 +318,15 @@ export default function PrintOrders() {
                                                 <td className="py-3 px-6 text-sm text-neutral-300">
                                                     {formatDate(order.created_at)}
                                                 </td>
-                                                <td className="py-3 px-6 font-medium text-white">
-                                                    {customerName}
+                                                <td className="py-3 px-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold text-white leading-tight truncate max-w-[200px]" title={info.storeName}>
+                                                            {info.storeName || 'Venda Direta'}
+                                                        </span>
+                                                        <span className="text-xs text-neutral-400">
+                                                            Resp: {info.customerName}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td className="py-3 px-6 font-bold text-emerald-400">
                                                     {formatPrice(order.valor_total)}
@@ -349,7 +372,11 @@ export default function PrintOrders() {
                             </div>
 
                             <div style={{ marginBottom: '10px' }}>
-                                <p style={{ margin: '2px 0', fontSize: '14px', fontWeight: 'bold' }}>Cliente:</p>
+                                <p style={{ margin: '2px 0', fontSize: '14px', fontWeight: 'bold' }}>LOJA:</p>
+                                <p style={{ margin: '0 0 4px 0', fontSize: '15px' }}>
+                                    {extractOrderInfo(order.status).storeName.toUpperCase() || 'VENDA DIRETA'}
+                                </p>
+                                <p style={{ margin: '2px 0', fontSize: '12px', fontWeight: 'bold' }}>RESPONSÁVEL:</p>
                                 <p style={{ margin: '0 0 8px 0', fontSize: '14px' }}>
                                     {extractOrderInfo(order.status).customerName.toUpperCase()}
                                 </p>

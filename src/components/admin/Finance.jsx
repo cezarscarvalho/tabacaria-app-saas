@@ -46,10 +46,16 @@ export default function Finance() {
     const extractCustomerName = (statusString) => {
         if (!statusString) return 'Desconhecido';
 
-        // Handle "Confirmado pelo cliente: [Nome] - [Items]" (with or without badge prefix)
+        // Handle "Confirmado pelo cliente | Loja: [Store] | Resp: [Name] - [Items]"
+        if (statusString.includes('Loja: ')) {
+            const storeMatch = statusString.match(/Loja:\s*(.*?)\s*\|/);
+            if (storeMatch) return storeMatch[1];
+        }
+
+        // Handle old "Confirmado pelo cliente: [Name] - [Items]"
         if (statusString.includes('Confirmado pelo cliente: ')) {
             const parts = statusString.split('Confirmado pelo cliente: ');
-            const content = parts[parts.length - 1]; // Take the part after the last occurrence
+            const content = parts[parts.length - 1];
             return content.split(' - ')[0] || 'Desconhecido';
         }
 
