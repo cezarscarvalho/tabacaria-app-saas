@@ -17,6 +17,16 @@ export default function Admin() {
     const [forcePasswordChange, setForcePasswordChange] = useState(false);
     const [activeTab, setActiveTab] = useState('orders');
     const [unreadMessages, setUnreadMessages] = useState(0);
+    const prevUnreadCount = React.useRef(0);
+
+    // Audio Notification logic
+    useEffect(() => {
+        if (unreadMessages > prevUnreadCount.current) {
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+            audio.play().catch(e => console.log('Erro ao tocar som:', e));
+        }
+        prevUnreadCount.current = unreadMessages;
+    }, [unreadMessages]);
 
     // Products State
     const [products, setProducts] = useState([]);
@@ -262,14 +272,14 @@ export default function Admin() {
                         </button>
                         <button
                             onClick={() => setActiveTab('messages')}
-                            className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm w-full text-left ${activeTab === 'messages' ? 'bg-primary border border-primary/20 text-dark-900 shadow-sm' : 'text-neutral-400 hover:bg-dark-700/50 hover:text-white'}`}
+                            className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl transition-all font-bold text-sm w-full text-left ${activeTab === 'messages' ? 'bg-primary border border-primary/20 text-dark-900 shadow-sm' : unreadMessages > 0 ? 'bg-amber-400/10 text-amber-400 border border-amber-400/20 shadow-lg shadow-amber-400/5' : 'text-neutral-400 hover:bg-dark-700/50 hover:text-white'}`}
                         >
                             <div className="flex items-center gap-3">
                                 <Mail size={18} className={activeTab === 'messages' ? 'text-dark-900' : ''} />
                                 Mensagens
                             </div>
                             {unreadMessages > 0 && (
-                                <span className="bg-red-500 text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center animate-bounce shadow-lg shadow-red-500/20">
+                                <span className={`bg-red-500 text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center shadow-lg shadow-red-500/20 ${activeTab !== 'messages' ? 'animate-bounce' : ''}`}>
                                     {unreadMessages}
                                 </span>
                             )}
