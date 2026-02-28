@@ -129,21 +129,29 @@ export default function Clients() {
             if (isEditing) {
                 const { error } = await supabase
                     .from('clientes')
-                    .update(formData)
+                    .update({
+                        nome: formData.nome,
+                        whatsapp: formData.whatsapp,
+                        ativo: formData.ativo
+                    })
                     .eq('id', currentClientId);
                 if (error) throw error;
             } else {
                 const { error } = await supabase
                     .from('clientes')
-                    .insert([formData]);
+                    .insert([{
+                        nome: formData.nome,
+                        whatsapp: formData.whatsapp,
+                        ativo: formData.ativo
+                    }]);
                 if (error) throw error;
             }
 
             setIsModalOpen(false);
             fetchClients();
         } catch (error) {
-            console.error('Erro ao salvar cliente:', error.message);
-            alert(`Erro: ${error.message}`);
+            console.error('Erro detalhado ao salvar cliente (Supabase):', error);
+            alert(`Erro ao salvar: ${error.message || 'Falha na comunicação com o banco.'}`);
         } finally {
             setSaving(false);
         }

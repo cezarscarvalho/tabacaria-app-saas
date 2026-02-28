@@ -109,21 +109,27 @@ export default function Suppliers() {
             if (isEditing) {
                 const { error } = await supabase
                     .from('fornecedores')
-                    .update(formData)
+                    .update({
+                        nome: formData.nome,
+                        whatsapp: formData.whatsapp
+                    })
                     .eq('id', currentSupplierId);
                 if (error) throw error;
             } else {
                 const { error } = await supabase
                     .from('fornecedores')
-                    .insert([formData]);
+                    .insert([{
+                        nome: formData.nome,
+                        whatsapp: formData.whatsapp
+                    }]);
                 if (error) throw error;
             }
 
             setIsModalOpen(false);
             fetchSuppliers();
         } catch (error) {
-            console.error('Erro ao salvar fornecedor:', error.message);
-            alert(`Erro: ${error.message}`);
+            console.error('Erro detalhado ao salvar fornecedor (Supabase):', error);
+            alert(`Erro ao salvar: ${error.message || 'Falha na comunicação com o banco.'}`);
         } finally {
             setSaving(false);
         }
