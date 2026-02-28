@@ -3,7 +3,7 @@ import { X, MessageCircle, Send, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { formatarNumeroWhats } from '../utils/whatsapp';
 
-export default function SupportModal({ isOpen, onClose }) {
+export default function SupportModal({ isOpen, onClose, settingsData }) {
     const [formData, setFormData] = useState({
         nome: '',
         whatsapp: '',
@@ -33,7 +33,6 @@ export default function SupportModal({ isOpen, onClose }) {
 
         setIsSubmitting(true);
 
-        // Normaliza o Zap para gravação segura
         const cleanZap = formatarNumeroWhats(formData.whatsapp);
         const prefixoMsg = `Whats: ${cleanZap} | Mensagem: `;
 
@@ -45,162 +44,126 @@ export default function SupportModal({ isOpen, onClose }) {
             lida: false
         };
 
-        console.log('Tentando salvar mensagem no Supabase com gravação direta de Zap:', payload);
-
         try {
-            // 1. Save to Supabase
-            const { error } = await supabase
-                .from('mensagens')
-                .insert([payload]);
+            const { error } = await supabase.from('mensagens').insert([payload]);
+            if (error) throw error;
 
-            if (error) {
-                console.error('Erro retornado pelo Supabase:', error);
-                alert(`Erro ao gravar no banco: ${error.message}`);
-                throw error;
-            }
-
-            // 2. Format WhatsApp message for direct open
             const text = `*NOVA MENSAGEM DE SUPORTE*%0A%0A*De:* ${formData.nome}%0A*Zap:* ${cleanZap}%0A*Loja:* ${formData.estabelecimento}%0A*Assunto:* ${formData.assunto}%0A%0A*Mensagem:*%0A${formData.mensagem}`;
 
-            const phoneNumber = formatarNumeroWhats(import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006');
+            // USO DO NÚMERO DINÂMICO DAS CONFIGURAÇÕES
+            const targetNumber = settingsData?.whatsapp_suporte || import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006';
+            const phoneNumber = formatarNumeroWhats(targetNumber);
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
 
-            alert('Mensagem enviada com sucesso ao banco!');
             setIsSuccess(true);
-
-            // Open WhatsApp
             window.open(whatsappUrl, '_blank');
 
             setTimeout(() => {
                 setIsSuccess(false);
                 setFormData({ nome: '', whatsapp: '', estabelecimento: '', assunto: 'Dúvidas', mensagem: '' });
                 onClose();
-                // Forçar recarga para limpar cache e resetar conexão
-                window.location.reload();
-            }, 1500);
+            }, 2000);
 
         } catch (error) {
             console.error('Erro ao enviar mensagem:', error.message);
-            alert('Erro ao enviar mensagem. Tente novamente.');
+            alert('Erro ao enviar mensagem.');
         } finally {
             setIsSubmitting(false);
         }
     };
 
     return (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[60] p-4">
-            <div className="bg-dark-800 border border-dark-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col animate-in zoom-in duration-300">
-                <div className="p-6 border-b border-dark-700 bg-dark-900/50 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-primary/20 p-2 rounded-xl">
-                            <MessageCircle className="text-primary" size={24} />
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[60] p-4">
+            <div className="bg-dark-800 border-2 border-primary/20 rounded-[2rem] w-full max-w-lg shadow-2xl overflow-hidden flex flex-col animate-in zoom-in duration-300">
+                <div className="p-8 border-b border-dark-700 bg-dark-900/50 flex justify-between items-center">
+                    <div className="flex items-center gap-4">
+                        <div className="bg-primary/20 p-3 rounded-2xl">
+                            <MessageCircle className="text-primary" size={28} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-white">Suporte Premium</h2>
-                            <p className="text-neutral-400 text-xs">Fale diretamente com nossa equipe</p>
+                            <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Suporte VIP</h2>
+                            <p className="text-neutral-500 text-[10px] font-bold uppercase tracking-widest">{settingsData?.nome_estabelecimento || 'Premium Service'}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-neutral-500 hover:text-white transition-colors">
+                    <button onClick={onClose} className="text-neutral-500 hover:text-white transition-colors p-2 bg-dark-700 rounded-xl">
                         <X size={24} />
                     </button>
                 </div>
 
-                <div className="p-6">
+                <div className="p-8">
                     {isSuccess ? (
                         <div className="py-12 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
-                            <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mb-6">
-                                <CheckCircle2 size={40} className="text-emerald-500" />
+                            <div className="w-24 h-24 bg-emerald-500/20 rounded-full flex items-center justify-center mb-8 border-2 border-emerald-500/30">
+                                <CheckCircle2 size={48} className="text-emerald-500" />
                             </div>
-                            <h3 className="text-2xl font-bold text-white mb-2">Mensagem Enviada!</h3>
-                            <p className="text-neutral-400">Estamos abrindo o WhatsApp para você concluir o contato.</p>
+                            <h3 className="text-3xl font-black text-white mb-4 uppercase italic">Sucesso!</h3>
+                            <p className="text-neutral-400 font-bold uppercase text-xs tracking-widest">Abrindo conversa no WhatsApp...</p>
                         </div>
                     ) : (
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
-                                        Seu Nome *
-                                    </label>
+                                    <label className="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2">Seu Nome *</label>
                                     <input
-                                        type="text"
-                                        required
+                                        type="text" required
                                         value={formData.nome}
                                         onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                                        className="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-all placeholder:text-neutral-600"
-                                        placeholder="Ex: João Silva"
+                                        className="w-full bg-dark-900 border border-dark-700 rounded-2xl px-5 py-4 text-white outline-none focus:border-primary transition-all font-bold"
+                                        placeholder="Seu nome"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
-                                        Seu WhatsApp *
-                                    </label>
+                                    <label className="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2">Seu WhatsApp *</label>
                                     <input
-                                        type="text"
-                                        required
+                                        type="text" required
                                         value={formData.whatsapp}
                                         onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
-                                        className="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-all placeholder:text-neutral-600"
-                                        placeholder="Ex: 11 98888-7777"
+                                        className="w-full bg-dark-900 border border-dark-700 rounded-2xl px-5 py-4 text-white outline-none focus:border-primary transition-all font-mono"
+                                        placeholder="11 99999-9999"
                                     />
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
-                                    Estabelecimento *
-                                </label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={formData.estabelecimento}
-                                    onChange={(e) => setFormData({ ...formData, estabelecimento: e.target.value })}
-                                    className="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-all placeholder:text-neutral-600"
-                                    placeholder="Nome da sua loja"
-                                />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2">Estabelecimento *</label>
+                                    <input
+                                        type="text" required
+                                        value={formData.estabelecimento}
+                                        onChange={(e) => setFormData({ ...formData, estabelecimento: e.target.value })}
+                                        className="w-full bg-dark-900 border border-dark-700 rounded-2xl px-5 py-4 text-white outline-none focus:border-primary transition-all font-bold"
+                                        placeholder="Nome da loja"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2">Assunto *</label>
+                                    <select
+                                        value={formData.assunto}
+                                        onChange={(e) => setFormData({ ...formData, assunto: e.target.value })}
+                                        className="w-full bg-dark-900 border border-dark-700 rounded-2xl px-5 py-4 text-white outline-none focus:border-primary transition-all font-black uppercase text-xs tracking-widest cursor-pointer"
+                                    >
+                                        {subjects.map(s => <option key={s} value={s} className="bg-dark-800">{s}</option>)}
+                                    </select>
+                                </div>
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
-                                    Assunto *
-                                </label>
-                                <select
-                                    value={formData.assunto}
-                                    onChange={(e) => setFormData({ ...formData, assunto: e.target.value })}
-                                    className="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-all appearance-none cursor-pointer"
-                                >
-                                    {subjects.map(s => (
-                                        <option key={s} value={s} className="bg-dark-800">{s}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
-                                    Como podemos ajudar? *
-                                </label>
+                                <label className="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2">Mensagem *</label>
                                 <textarea
-                                    required
-                                    rows="4"
+                                    required rows="3"
                                     value={formData.mensagem}
                                     onChange={(e) => setFormData({ ...formData, mensagem: e.target.value })}
-                                    className="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-all placeholder:text-neutral-600 resize-none"
-                                    placeholder="Descreva sua dúvida, sugestão ou problema..."
+                                    className="w-full bg-dark-900 border border-dark-700 rounded-2xl px-5 py-4 text-white outline-none focus:border-primary transition-all resize-none italic"
+                                    placeholder="Como podemos ajudar?"
                                 ></textarea>
                             </div>
 
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="w-full bg-primary hover:bg-primary-hover text-dark-900 font-bold py-4 rounded-xl flex items-center justify-center gap-3 transition-all transform active:scale-[0.98] disabled:opacity-50"
+                                className="w-full bg-primary hover:bg-primary-hover text-dark-900 font-black py-5 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl shadow-primary/20 uppercase tracking-widest"
                             >
-                                {isSubmitting ? (
-                                    <div className="w-6 h-6 border-3 border-dark-900/30 border-t-dark-900 rounded-full animate-spin"></div>
-                                ) : (
-                                    <>
-                                        <Send size={20} />
-                                        <span>Enviar Mensagem</span>
-                                    </>
-                                )}
+                                {isSubmitting ? <div className="w-6 h-6 border-3 border-dark-900/30 border-t-dark-900 rounded-full animate-spin"></div> : <><Send size={20} /> Enviar Mensagem</>}
                             </button>
                         </form>
                     )}

@@ -10,6 +10,7 @@ import {
     TrendingUp,
     RefreshCw,
     Users,
+    Settings as SettingsIcon,
     Bell
 } from 'lucide-react';
 
@@ -19,6 +20,7 @@ import Logistics from '../components/admin/Logistics';
 import Messages from '../components/admin/Messages';
 import Finance from '../components/admin/Finance';
 import Clients from '../components/admin/Clients';
+import Settings from '../components/admin/Settings';
 
 export default function AdminPanel() {
     console.log('[DEBUG-STATIC] Renderizando Admin Shell (Arquitetura Estática).');
@@ -30,6 +32,7 @@ export default function AdminPanel() {
     const [orders, setOrders] = useState([]);
     const [messages, setMessages] = useState([]);
     const [clients, setClients] = useState([]);
+    const [settings, setSettings] = useState(null);
     const [loading, setLoading] = useState(false);
     const [unreadMessages, setUnreadMessages] = useState(0);
 
@@ -72,6 +75,10 @@ export default function AdminPanel() {
             const { data: clis } = await supabase.from('clientes').select('*').order('nome', { ascending: true });
             setClients(clis || []);
 
+            // Busca Configurações (Garante id 1 ou o primeiro registro)
+            const { data: cfg } = await supabase.from('configuracoes').select('*').limit(1).single();
+            setSettings(cfg || null);
+
         } catch (err) {
             console.error('Erro no carregamento estático:', err.message);
         } finally {
@@ -101,6 +108,7 @@ export default function AdminPanel() {
             case 'logistica': return <Logistics ordersData={orders} refreshFunc={fetchAllData} />;
             case 'financeiro': return <Finance ordersData={orders} refreshFunc={fetchAllData} />;
             case 'clientes': return <Clients clientsData={clients} refreshFunc={fetchAllData} />;
+            case 'configuracoes': return <Settings session={session} settingsData={settings} refreshFunc={fetchAllData} />;
             default: return <Orders ordersData={orders} refreshFunc={fetchAllData} />;
         }
     };
@@ -156,6 +164,15 @@ export default function AdminPanel() {
                         className={`flex items-center gap-3 px-5 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === 'financeiro' ? 'bg-primary text-dark-900' : 'text-neutral-500 hover:bg-dark-700 hover:text-white'}`}
                     >
                         <TrendingUp size={18} /> Financeiro
+                    </button>
+
+                    <div className="h-px bg-dark-700 my-2 mx-2 opacity-50"></div>
+
+                    <button
+                        onClick={() => setActiveTab('configuracoes')}
+                        className={`flex items-center gap-3 px-5 py-3.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === 'configuracoes' ? 'bg-primary text-dark-900' : 'text-neutral-500 hover:bg-dark-700 hover:text-white'}`}
+                    >
+                        <SettingsIcon size={18} /> Configurações
                     </button>
                 </nav>
 
