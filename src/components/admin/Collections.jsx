@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { Search, Send, UserCheck, UserMinus, MessageSquare } from 'lucide-react';
+import { Search, Send, UserCheck, UserMinus, MessageSquare, ShoppingCart } from 'lucide-react';
 import { formatarNumeroWhats } from '../../utils/whatsapp';
 
 export default function Collections() {
@@ -55,6 +55,19 @@ export default function Collections() {
         }
 
         const message = `Olá ${client.nome}, tudo bem? Aqui é da Tabacaria. Vimos aqui que você tem uma pendência com a gente. Podemos acertar?`;
+        const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+        window.open(whatsappUrl, '_blank');
+    };
+
+    const handleSendOrderReminder = (client) => {
+        const phone = formatarNumeroWhats(client.whatsapp);
+        if (!phone) {
+            alert('Aviso: Número não cadastrado ou inválido para este cliente.');
+            return;
+        }
+
+        const message = `Olá *${client.nome}*, tudo bem? Aqui é da Tabacaria. Estamos fechando os pedidos da semana. Gostaria de repor algo?`;
         const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
         window.open(whatsappUrl, '_blank');
@@ -168,17 +181,30 @@ export default function Collections() {
                                             <span className="text-neutral-400 font-medium">{client.whatsapp || 'N/A'}</span>
                                         </td>
                                         <td className="py-4 px-6 text-right">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleSendReminder(client);
-                                                }}
-                                                className="bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white p-2.5 rounded-xl transition-all flex items-center gap-2 ml-auto"
-                                                title="Enviar cobrança via WhatsApp"
-                                            >
-                                                <MessageSquare size={18} />
-                                                <span className="text-xs font-bold uppercase hidden sm:inline">Cobrar</span>
-                                            </button>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleSendOrderReminder(client);
+                                                    }}
+                                                    className="bg-primary/10 hover:bg-primary text-primary hover:text-dark-900 p-2.5 rounded-xl transition-all flex items-center gap-2"
+                                                    title="Lembrete de Pedido"
+                                                >
+                                                    <ShoppingCart size={18} />
+                                                    <span className="text-xs font-bold uppercase hidden sm:inline">Lembrete</span>
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleSendReminder(client);
+                                                    }}
+                                                    className="bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white p-2.5 rounded-xl transition-all flex items-center gap-2"
+                                                    title="Enviar cobrança via WhatsApp"
+                                                >
+                                                    <MessageSquare size={18} />
+                                                    <span className="text-xs font-bold uppercase hidden sm:inline">Cobrar</span>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
