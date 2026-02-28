@@ -11,23 +11,28 @@ export default function CheckoutConfirmationModal({ isOpen, onClose, orderData, 
     const handleConfirm = async () => {
         setIsLoading(true);
         try {
+            const statusString = `Confirmado pelo cliente: ${orderData.customerName} - ${orderData.items}`;
+
             const { error } = await supabase
                 .from('pedidos')
                 .insert([{
                     valor_total: orderData.total,
-                    status: orderData.status
+                    status: statusString
                 }]);
 
-            if (error) throw error;
+            if (error) {
+                console.error('Erro ao registrar pedido no Supabase:', error);
+                alert('Aviso: Não conseguimos salvar o histórico do seu pedido no sistema, mas relaxe! Seu WhatsApp já foi enviado e nós vamos te atender normalmente.');
+            }
 
             setIsSuccess(true);
             setTimeout(() => {
-                onConfirm(); // This should clear the cart and close the modal
+                onConfirm(); // Clear cart and close
             }, 2000);
         } catch (error) {
-            console.error('Erro ao registrar pedido:', error);
-            alert('Ocorreu um erro ao registrar seu pedido no histórico, mas não se preocupe, se você enviou no WhatsApp nós já recebemos!');
-            onConfirm(); // Still clear cart to avoid confusion
+            console.error('Erro geral na confirmação:', error);
+            alert('Aviso: Ocorreu um erro técnico ao registrar o pedido. Como você já enviou o WhatsApp, vamos limpar seu carrinho agora.');
+            onConfirm();
         } finally {
             setIsLoading(false);
         }

@@ -45,6 +45,15 @@ export default function Finance() {
     // Helper to extract Name from the combined string
     const extractCustomerName = (statusString) => {
         if (!statusString) return 'Desconhecido';
+
+        // Handle "Confirmado pelo cliente: [Nome] - [Items]" (with or without badge prefix)
+        if (statusString.includes('Confirmado pelo cliente: ')) {
+            const parts = statusString.split('Confirmado pelo cliente: ');
+            const content = parts[parts.length - 1]; // Take the part after the last occurrence
+            return content.split(' - ')[0] || 'Desconhecido';
+        }
+
+        // Old format: "Novo Pedido - Cliente: [Nome] - Itens: [Items]"
         const match = statusString.match(/Cliente: (.*?)( - Itens:|$)/);
         return match ? match[1] : 'Desconhecido';
     };
@@ -241,9 +250,9 @@ export default function Finance() {
                             <div key={client.name} className="flex items-center justify-between p-3 bg-dark-900/50 border border-dark-700 rounded-xl group hover:border-emerald-500/20 transition-all">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${index === 0 ? 'bg-yellow-500/20 text-yellow-500' :
-                                            index === 1 ? 'bg-neutral-400/20 text-neutral-400' :
-                                                index === 2 ? 'bg-amber-700/20 text-amber-700' :
-                                                    'bg-dark-700 text-neutral-500'
+                                        index === 1 ? 'bg-neutral-400/20 text-neutral-400' :
+                                            index === 2 ? 'bg-amber-700/20 text-amber-700' :
+                                                'bg-dark-700 text-neutral-500'
                                         }`}>
                                         {index + 1}
                                     </div>

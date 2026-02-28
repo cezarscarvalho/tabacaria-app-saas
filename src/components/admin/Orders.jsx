@@ -65,12 +65,26 @@ export default function Orders() {
             // or replace the existing prefix.
             let baseDetails = currentFullStatus;
 
-            const statusesToRemove = ['Novo Pedido - ', 'Pendente - ', 'Entregue - ', 'Cancelado - '];
+            const statusesToRemove = [
+                'Novo Pedido - ',
+                'Pendente - ',
+                'Entregue - ',
+                'Cancelado - ',
+                'Impresso - ',
+                'Finalizado - ',
+                'Confirmado - ' // Badge version in PrintOrders
+            ];
+
             for (const status of statusesToRemove) {
                 if (baseDetails?.startsWith(status)) {
                     baseDetails = baseDetails.substring(status.length);
                     break;
                 }
+            }
+
+            // Handle the specific "Confirmado pelo cliente: [Name] - [Items]" prefix
+            if (baseDetails?.startsWith('Confirmado pelo cliente: ')) {
+                baseDetails = baseDetails.substring('Confirmado pelo cliente: '.length);
             }
 
             // If it doesn't start with any known prefix, it's just the raw details (like from our new insert)
@@ -202,6 +216,9 @@ export default function Orders() {
                                                 if (s.startsWith('Pendente -')) currentBadgeStatus = 'Pendente';
                                                 else if (s.startsWith('Entregue -')) currentBadgeStatus = 'Entregue';
                                                 else if (s.startsWith('Cancelado -')) currentBadgeStatus = 'Cancelado';
+                                                else if (s.startsWith('Impresso -')) currentBadgeStatus = 'Impresso';
+                                                else if (s.startsWith('Finalizado -')) currentBadgeStatus = 'Finalizado';
+                                                else if (s.startsWith('Confirmado pelo cliente:')) currentBadgeStatus = 'Novo Pedido'; // Treat initial confirmation as "New"
                                                 else if (s.startsWith('Novo Pedido -')) currentBadgeStatus = 'Novo Pedido';
                                                 // Default to Novo Pedido if no known prefix is found
 

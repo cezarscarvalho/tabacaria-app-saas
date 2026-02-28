@@ -37,24 +37,20 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
                 itemListText.push(itemText);
             });
 
-            orderDetails += itemListText.join(', ');
             text += `%0A*Total: ${formatPrice(total)}*`;
 
             const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006';
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
 
-            // 2. Open WhatsApp (Must be triggered directly by user action)
-            const whatsappWindow = window.open(whatsappUrl, '_blank');
+            // 2. Open WhatsApp (Only step for this modal)
+            window.open(whatsappUrl, '_blank');
 
-            if (!whatsappWindow) {
-                throw new Error('Não foi possível abrir o WhatsApp. Verifique se o navegador bloqueou o popup.');
-            }
-
-            // 3. Instead of registering, we notify the parent (Home) to show the confirmation modal
+            // 3. Notify parent to show confirmation modal with order details
             if (onCheckoutStarted) {
                 onCheckoutStarted({
                     total: total,
-                    status: orderDetails.trim()
+                    customerName: customerName.trim(),
+                    items: itemListText.join(', ')
                 });
             }
 

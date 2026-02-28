@@ -74,18 +74,25 @@ export default function PrintOrders() {
             }
         }
 
-        // Try to parse 'Cliente: [Name] - Itens: [Items]'
+        // New format: "Confirmado pelo cliente: [Nome] - [Items]"
+        if (remaining.startsWith('Confirmado pelo cliente: ')) {
+            const content = remaining.substring('Confirmado pelo cliente: '.length);
+            const [name, ...rest] = content.split(' - ');
+            return {
+                badgeStatus: 'Confirmado',
+                customerName: name || 'Desconhecido',
+                itemsText: rest.join(' - ') || ''
+            };
+        }
+
+        // Old formats
         let customerName = 'Desconhecido';
         let itemsText = remaining;
 
         const clienteMatch = remaining.match(/Cliente: (.*?)( - Itens: (.*))?$/);
         if (clienteMatch) {
             customerName = clienteMatch[1];
-            if (clienteMatch[3]) {
-                itemsText = clienteMatch[3];
-            } else {
-                itemsText = '';
-            }
+            itemsText = clienteMatch[3] || '';
         }
 
         return { badgeStatus, customerName, itemsText };
@@ -303,10 +310,10 @@ export default function PrintOrders() {
                                                 </td>
                                                 <td className="py-3 px-6">
                                                     <span className={`inline-flex px-2 py-1 text-xs font-bold rounded-lg ${badgeStatus === 'Novo Pedido' ? 'bg-amber-500/10 text-amber-400' :
-                                                            badgeStatus === 'Impresso' ? 'bg-purple-500/10 text-purple-400' :
-                                                                badgeStatus === 'Entregue' || badgeStatus === 'Finalizado' ? 'bg-emerald-500/10 text-emerald-400' :
-                                                                    badgeStatus === 'Cancelado' ? 'bg-red-500/10 text-red-400' :
-                                                                        'bg-blue-500/10 text-blue-400'
+                                                        badgeStatus === 'Impresso' ? 'bg-purple-500/10 text-purple-400' :
+                                                            badgeStatus === 'Entregue' || badgeStatus === 'Finalizado' ? 'bg-emerald-500/10 text-emerald-400' :
+                                                                badgeStatus === 'Cancelado' ? 'bg-red-500/10 text-red-400' :
+                                                                    'bg-blue-500/10 text-blue-400'
                                                         }`}>
                                                         {badgeStatus}
                                                     </span>
