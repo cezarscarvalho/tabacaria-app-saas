@@ -6,6 +6,7 @@ import { formatarNumeroWhats } from '../utils/whatsapp';
 export default function SupportModal({ isOpen, onClose }) {
     const [formData, setFormData] = useState({
         nome: '',
+        whatsapp: '',
         estabelecimento: '',
         assunto: 'Dúvidas',
         mensagem: ''
@@ -25,21 +26,26 @@ export default function SupportModal({ isOpen, onClose }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.nome || !formData.estabelecimento || !formData.mensagem) {
+        if (!formData.nome || !formData.whatsapp || !formData.estabelecimento || !formData.mensagem) {
             alert('Por favor, preencha todos os campos obrigatórios.');
             return;
         }
 
         setIsSubmitting(true);
+
+        // Normaliza o Zap para gravação segura
+        const cleanZap = formatarNumeroWhats(formData.whatsapp);
+        const prefixoMsg = `Whats: ${cleanZap} | Mensagem: `;
+
         const payload = {
             nome: formData.nome,
             estabelecimento: formData.estabelecimento,
             assunto: formData.assunto,
-            mensagem: formData.mensagem,
+            mensagem: `${prefixoMsg}${formData.mensagem}`,
             lida: false
         };
 
-        console.log('Tentando salvar mensagem no Supabase:', payload);
+        console.log('Tentando salvar mensagem no Supabase com gravação direta de Zap:', payload);
 
         try {
             // 1. Save to Supabase
@@ -53,13 +59,11 @@ export default function SupportModal({ isOpen, onClose }) {
                 throw error;
             }
 
-            // 2. Format WhatsApp message
-            const text = `*NOVA MENSAGEM DE SUPORTE*%0A%0A*De:* ${formData.nome}%0A*Loja:* ${formData.estabelecimento}%0A*Assunto:* ${formData.assunto}%0A%0A*Mensagem:*%0A${formData.mensagem}`;
+            // 2. Format WhatsApp message for direct open
+            const text = `*NOVA MENSAGEM DE SUPORTE*%0A%0A*De:* ${formData.nome}%0A*Zap:* ${cleanZap}%0A*Loja:* ${formData.estabelecimento}%0A*Assunto:* ${formData.assunto}%0A%0A*Mensagem:*%0A${formData.mensagem}`;
 
             const phoneNumber = formatarNumeroWhats(import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006');
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
-
-            // 3. Open WhatsApp (Moved inside success block for cleaner flow)
 
             alert('Mensagem enviada com sucesso ao banco!');
             setIsSuccess(true);
@@ -69,7 +73,7 @@ export default function SupportModal({ isOpen, onClose }) {
 
             setTimeout(() => {
                 setIsSuccess(false);
-                setFormData({ nome: '', estabelecimento: '', assunto: 'Dúvidas', mensagem: '' });
+                setFormData({ nome: '', whatsapp: '', estabelecimento: '', assunto: 'Dúvidas', mensagem: '' });
                 onClose();
                 // Forçar recarga para limpar cache e resetar conexão
                 window.location.reload();
@@ -128,17 +132,31 @@ export default function SupportModal({ isOpen, onClose }) {
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
-                                        Estabelecimento *
+                                        Seu WhatsApp *
                                     </label>
                                     <input
                                         type="text"
                                         required
-                                        value={formData.estabelecimento}
-                                        onChange={(e) => setFormData({ ...formData, estabelecimento: e.target.value })}
+                                        value={formData.whatsapp}
+                                        onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
                                         className="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-all placeholder:text-neutral-600"
-                                        placeholder="Nome da sua loja"
+                                        placeholder="Ex: 11 98888-7777"
                                     />
                                 </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
+                                    Estabelecimento *
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={formData.estabelecimento}
+                                    onChange={(e) => setFormData({ ...formData, estabelecimento: e.target.value })}
+                                    className="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-all placeholder:text-neutral-600"
+                                    placeholder="Nome da sua loja"
+                                />
                             </div>
 
                             <div>

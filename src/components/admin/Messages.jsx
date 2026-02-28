@@ -50,27 +50,38 @@ export default function Messages() {
                 await toggleRead(msg.id, false);
             }
 
-            // 2. Lookup client WhatsApp
-            const { data: clients, error } = await supabase
-                .from('clientes')
-                .select('whatsapp')
-                .or(`nome.ilike.%${msg.nome}%,estabelecimento.ilike.%${msg.estabelecimento}%`)
-                .eq('ativo', true)
-                .limit(1);
-
+            // 2. Tentar extrair o Zap diretamente da gravação direta (prefixo)
             let phone = '';
-            if (clients && clients.length > 0) {
-                phone = formatarNumeroWhats(clients[0].whatsapp);
+            const matchWhats = msg.mensagem.match(/Whats:\s*(\d+)/);
+
+            if (matchWhats) {
+                phone = formatarNumeroWhats(matchWhats[1]);
+                console.log('Número extraído via Prefixo Direct:', phone);
+            } else {
+                // Fallback: Busca na tabela de clientes (para mensagens antigas)
+                const { data: clients } = await supabase
+                    .from('clientes')
+                    .select('whatsapp')
+                    .or(`nome.ilike.%${msg.nome}%,estabelecimento.ilike.%${msg.estabelecimento}%`)
+                    .eq('ativo', true)
+                    .limit(1);
+
+                if (clients && clients.length > 0) {
+                    phone = formatarNumeroWhats(clients[0].whatsapp);
+                }
             }
 
             if (!phone) {
-                const manualPhone = prompt('AVISO: Número não cadastrado ou inválido no sistema. Por favor, digite o WhatsApp (com DDD) para responder agora:');
+                const manualPhone = prompt('AVISO: Número não encontrado na mensagem nem no cadastro. Por favor, digite o WhatsApp (com DDD) para responder:');
                 if (!manualPhone) return;
                 phone = formatarNumeroWhats(manualPhone);
             }
 
-            // 3. Format message with citation
-            const citation = `> ${msg.mensagem}`;
+            // 3. Limpar o prefixo da mensagem para a citação (opcional, mas fica mais bonito)
+            const cleanMessage = msg.mensagem.replace(/Whats:\s*\d+\s*\|\s*Mensagem:\s*/, '');
+
+            // 4. Format message with citation
+            const citation = `> ${cleanMessage}`;
             const text = `Olá *${msg.estabelecimento}*, respondendo sua dúvida sobre *${msg.assunto}*:%0A%0A${citation}%0A%0A*Sua Resposta:* `;
 
             const whatsappUrl = `https://wa.me/${phone}?text=${text}`;

@@ -267,6 +267,7 @@ export default function Suppliers() {
                             <div>
                                 <label className="block text-sm font-medium text-neutral-300 mb-1">WhatsApp</label>
                                 <input
+                                    required
                                     type="text"
                                     name="whatsapp"
                                     value={formData.whatsapp}
