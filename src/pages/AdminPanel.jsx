@@ -5,22 +5,26 @@ import Orders from '../components/admin/Orders';
 import Logistics from '../components/admin/Logistics';
 
 export default function AdminPanel() {
-    console.log('[REBUILD] AdminPanel: Carregando módulos estáveis.');
+    console.log('[DEBUG] Tentando renderizar Admin...');
 
     const [session, setSession] = useState(null);
     const [activeTab, setActiveTab] = useState('orders');
 
-    // 1. Auth Simples e Estável
+    // 1. Auth Simples e Estável com trava de montagem
     useEffect(() => {
         let mounted = true;
+        console.log('[DEBUG] AdminPanel: useEffect de Auth disparado.');
 
         supabase.auth.getSession().then(({ data: { session: s } }) => {
-            if (mounted) setSession(s);
+            if (mounted) {
+                console.log('[DEBUG] AdminPanel: Sessão inicial definida.');
+                setSession(s);
+            }
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
             if (mounted) {
-                console.log('[REBUILD] Auth Change:', _event);
+                console.log('[DEBUG] AdminPanel: Auth Change disparado:', _event);
                 setSession(s);
             }
         });
@@ -29,7 +33,7 @@ export default function AdminPanel() {
             mounted = false;
             subscription.unsubscribe();
         };
-    }, []);
+    }, []); // Dependência vazia crucial
 
     const handleLogout = async () => {
         await supabase.auth.signOut();

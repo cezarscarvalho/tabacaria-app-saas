@@ -7,18 +7,9 @@ export default function Orders() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        console.log('[DEBUG] Orders: useEffect de Carga disparado (Apenas uma vez).');
         fetchOrders();
-
-        // Optional: Subscribe to real-time order updates
-        const subscription = supabase
-            .channel('pedidos_changes')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos' }, payload => {
-                fetchOrders(); // Re-fetch on any change
-            })
-            .subscribe();
-
-        return () => supabase.removeChannel(subscription);
-    }, []);
+    }, []); // Dependência vazia: Sem loop
 
     const fetchOrders = async () => {
         setLoading(true);

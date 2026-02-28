@@ -13,8 +13,9 @@ export default function Logistics() {
     const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
+        console.log('[DEBUG] Logistics: useEffect de Carga disparado (Apenas uma vez).');
         fetchInitialData();
-    }, []);
+    }, []); // Dependência vazia: Sem loop
 
     const fetchInitialData = async () => {
         setLoading(true);
