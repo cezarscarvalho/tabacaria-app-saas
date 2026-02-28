@@ -6,7 +6,7 @@ export default function ProductModal({ isOpen, onClose, onSuccess }) {
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         nome: '',
-        preco: '',
+        preco_venda: '',
         estoque: '',
         embalagem: '',
         foto_url: ''
@@ -29,7 +29,7 @@ export default function ProductModal({ isOpen, onClose, onSuccess }) {
                 .insert([
                     {
                         nome: formData.nome,
-                        preco: parseFloat(formData.preco) || 0,
+                        preco_venda: parseFloat(formData.preco_venda) || 0,
                         estoque: parseInt(formData.estoque, 10) || 0,
                         embalagem: formData.embalagem,
                         foto_url: formData.foto_url
@@ -43,7 +43,7 @@ export default function ProductModal({ isOpen, onClose, onSuccess }) {
             // Reset form
             setFormData({
                 nome: '',
-                preco: '',
+                preco_venda: '',
                 estoque: '',
                 embalagem: '',
                 foto_url: ''
@@ -89,8 +89,8 @@ export default function ProductModal({ isOpen, onClose, onSuccess }) {
                                     type="number"
                                     step="0.01"
                                     min="0"
-                                    name="preco"
-                                    value={formData.preco}
+                                    name="preco_venda"
+                                    value={formData.preco_venda}
                                     onChange={handleChange}
                                     className="w-full bg-dark-900 border border-dark-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary transition-colors"
                                     placeholder="0.00"

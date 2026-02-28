@@ -5,7 +5,7 @@ export default function CartFAB({ cart, onClick }) {
     if (cart.length === 0) return null;
 
     const totalItems = cart.reduce((acc, item) => acc + item.quantidade, 0);
-    const totalValue = cart.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
+    const totalValue = cart.reduce((acc, item) => acc + (item.preco_venda * item.quantidade), 0);
 
     const formatPrice = (price) => {
         const validPrice = typeof price === 'number' ? price : parseFloat(price);

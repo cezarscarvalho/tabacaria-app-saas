@@ -4,7 +4,7 @@ import { X, Plus, Minus, Trash2, MessageCircle } from 'lucide-react';
 export default function CartModal({ isOpen, onClose, cart, updateQuantity, removeItem }) {
     if (!isOpen) return null;
 
-    const total = cart.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
+    const total = cart.reduce((acc, item) => acc + (item.preco_venda * item.quantidade), 0);
 
     const formatPrice = (price) => {
         const validPrice = typeof price === 'number' ? price : parseFloat(price);
@@ -18,7 +18,7 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
         let text = 'Olá! Gostaria de fazer o pedido:%0A%0A';
 
         cart.forEach(item => {
-            text += `${item.quantidade}x ${item.nome} (${formatPrice(item.preco)})%0A`;
+            text += `${item.quantidade}x ${item.nome} (${formatPrice(item.preco_venda)})%0A`;
         });
 
         text += `%0A*Total: ${formatPrice(total)}*`;
@@ -61,7 +61,7 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
 
                                     <div className="flex-1 min-w-0">
                                         <h4 className="text-sm font-semibold text-white truncate">{item.nome}</h4>
-                                        <p className="text-primary font-bold text-sm">{formatPrice(item.preco)}</p>
+                                        <p className="text-primary font-bold text-sm">{formatPrice(item.preco_venda)}</p>
 
                                         <div className="flex items-center gap-3 mt-2">
                                             <div className="flex items-center bg-dark-800 rounded-lg border border-dark-600">

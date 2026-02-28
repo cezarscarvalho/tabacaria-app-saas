@@ -186,7 +186,7 @@ export default function Admin() {
                                                 </span>
                                             </td>
                                             <td className="py-4 px-6 font-bold text-white text-base">
-                                                {formatPrice(product.preco)}
+                                                {formatPrice(product.preco_venda)}
                                             </td>
                                         </tr>
                                     ))

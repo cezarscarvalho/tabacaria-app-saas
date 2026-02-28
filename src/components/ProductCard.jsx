@@ -43,7 +43,7 @@ export default function ProductCard({ product, addToCart }) {
                 <h3 className="font-semibold text-lg text-white mb-2 line-clamp-2 min-h-[56px] leading-tight">{product.nome}</h3>
 
                 <div className="mt-auto pt-3 flex items-center justify-between mb-4">
-                    <span className="text-xl sm:text-2xl font-black text-primary">{formatPrice(product.preco)}</span>
+                    <span className="text-xl sm:text-2xl font-black text-primary">{formatPrice(product.preco_venda)}</span>
                 </div>
 
                 <button
