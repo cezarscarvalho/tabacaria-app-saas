@@ -75,7 +75,7 @@ export default function AdminPanel() {
             const { data: clis } = await supabase.from('clientes').select('*').order('nome', { ascending: true });
             setClients(clis || []);
 
-            // Busca Configurações (Garante id 1 ou o primeiro registro)
+            // Busca Configurações
             const { data: cfg } = await supabase.from('configuracoes').select('*').limit(1).single();
             setSettings(cfg || null);
 
@@ -188,7 +188,6 @@ export default function AdminPanel() {
 
             {/* Main Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                {/* Header Estático com Botão de Refresh */}
                 <header className="h-20 bg-dark-800 border-b border-dark-700 flex items-center justify-between px-6 md:px-10 shrink-0">
                     <h2 className="text-sm font-black text-neutral-400 uppercase tracking-widest animate-in slide-in-from-left duration-500">
                         Painel de Controle <span className="text-white">/ {activeTab}</span>
