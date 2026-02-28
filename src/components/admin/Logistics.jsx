@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { Search, Package, ShoppingCart, Send, ArrowUpDown, Filter, CheckCircle2 } from 'lucide-react';
+import { formatarNumeroWhats } from '../../utils/whatsapp';
 
 export default function Logistics() {
     const [orders, setOrders] = useState([]);
@@ -100,8 +101,18 @@ export default function Logistics() {
                 text += `${index + 1}. ${item.name} - ${item.qty} unidades%0A`;
             });
 
-            const cleanNumber = supplier.whatsapp.replace(/\D/g, '');
-            const whatsappUrl = `https://wa.me/55${cleanNumber}?text=${text}`;
+            let phone = formatarNumeroWhats(supplier.whatsapp);
+
+            if (!phone) {
+                const manualPhone = prompt('Este fornecedor não possui WhatsApp válido cadastrado. Por favor, digite o número (com DDD):');
+                if (!manualPhone) {
+                    setIsUpdating(false);
+                    return;
+                }
+                phone = formatarNumeroWhats(manualPhone);
+            }
+
+            const whatsappUrl = `https://wa.me/${phone}?text=${text}`;
 
             // 2. Update status of the orders included in this batch
             const orderIds = orders.map(o => o.id);

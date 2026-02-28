@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, MessageCircle, Send, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import { formatarNumeroWhats } from '../utils/whatsapp';
 
 export default function SupportModal({ isOpen, onClose }) {
     const [formData, setFormData] = useState({
@@ -55,7 +56,7 @@ export default function SupportModal({ isOpen, onClose }) {
             // 2. Format WhatsApp message
             const text = `*NOVA MENSAGEM DE SUPORTE*%0A%0A*De:* ${formData.nome}%0A*Loja:* ${formData.estabelecimento}%0A*Assunto:* ${formData.assunto}%0A%0A*Mensagem:*%0A${formData.mensagem}`;
 
-            const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006';
+            const phoneNumber = formatarNumeroWhats(import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006');
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
 
             // 3. Open WhatsApp (Moved inside success block for cleaner flow)

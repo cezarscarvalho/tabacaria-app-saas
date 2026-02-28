@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { Mail, MailOpen, Trash2, CheckCircle, Clock, MessageCircle } from 'lucide-react';
+import { formatarNumeroWhats } from '../../utils/whatsapp';
 
 export default function Messages() {
     const [messages, setMessages] = useState([]);
@@ -59,18 +60,13 @@ export default function Messages() {
 
             let phone = '';
             if (clients && clients.length > 0) {
-                phone = clients[0].whatsapp.replace(/\D/g, '');
+                phone = formatarNumeroWhats(clients[0].whatsapp);
             }
 
             if (!phone) {
-                const manualPhone = prompt('Não encontramos o WhatsApp deste cliente no cadastro. Por favor, digite o número (com DDD) para responder:');
+                const manualPhone = prompt('AVISO: Número não cadastrado ou inválido no sistema. Por favor, digite o WhatsApp (com DDD) para responder agora:');
                 if (!manualPhone) return;
-                phone = manualPhone.replace(/\D/g, '');
-            }
-
-            // Ensure country code
-            if (phone.length === 11 && !phone.startsWith('55')) {
-                phone = '55' + phone;
+                phone = formatarNumeroWhats(manualPhone);
             }
 
             // 3. Format message with citation

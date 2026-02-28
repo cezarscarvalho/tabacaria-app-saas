@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Plus, Minus, Trash2, MessageCircle } from 'lucide-react';
+import { formatarNumeroWhats } from '../utils/whatsapp';
 
 export default function CartModal({ isOpen, onClose, cart, updateQuantity, removeItem, onCheckoutStarted }) {
     const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -39,7 +40,7 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
 
             text += `%0A*Total: ${formatPrice(total)}*`;
 
-            const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006';
+            const phoneNumber = formatarNumeroWhats(import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006');
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
 
             // 2. Open WhatsApp (Only step for this modal)

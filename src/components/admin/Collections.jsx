@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { Search, Send, UserCheck, UserMinus, MessageSquare } from 'lucide-react';
+import { formatarNumeroWhats } from '../../utils/whatsapp';
 
 export default function Collections() {
     const [clients, setClients] = useState([]);
@@ -47,14 +48,14 @@ export default function Collections() {
     };
 
     const handleSendReminder = (client) => {
-        if (!client.whatsapp) {
-            alert('Este cliente não possui WhatsApp cadastrado.');
+        const phone = formatarNumeroWhats(client.whatsapp);
+        if (!phone) {
+            alert('Aviso: Número não cadastrado ou inválido para este cliente.');
             return;
         }
 
-        const cleanNumber = client.whatsapp.replace(/\D/g, '');
         const message = `Olá ${client.nome}, tudo bem? Aqui é da Tabacaria. Vimos aqui que você tem uma pendência com a gente. Podemos acertar?`;
-        const whatsappUrl = `https://wa.me/55${cleanNumber}?text=${encodeURIComponent(message)}`;
+        const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
         window.open(whatsappUrl, '_blank');
     };
