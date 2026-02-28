@@ -157,8 +157,8 @@ export default function PrintOrders() {
 
         // Search Filter (by Customer Name, Store Name, or part of string)
         const matchesSearch =
-            info.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            info.storeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (info.customerName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (info.storeName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
             (order.status && order.status.toLowerCase().includes(searchTerm.toLowerCase()));
 
         // Status Filter
@@ -302,7 +302,7 @@ export default function PrintOrders() {
                                     </tr>
                                 ) : (
                                     filteredOrders.map(order => {
-                                        const { badgeStatus, customerName } = extractOrderInfo(order.status);
+                                        const info = extractOrderInfo(order.status);
                                         const isSelected = selectedIds.includes(order.id);
                                         return (
                                             <tr key={order.id} className={`hover:bg-dark-700/30 transition-colors ${isSelected ? 'bg-primary/5' : ''}`}>
@@ -320,11 +320,11 @@ export default function PrintOrders() {
                                                 </td>
                                                 <td className="py-3 px-6">
                                                     <div className="flex flex-col">
-                                                        <span className="font-bold text-white leading-tight truncate max-w-[200px]" title={info.storeName}>
+                                                        <span className="font-bold text-white leading-tight truncate max-w-[200px]" title={info.storeName || ''}>
                                                             {info.storeName || 'Venda Direta'}
                                                         </span>
                                                         <span className="text-xs text-neutral-400">
-                                                            Resp: {info.customerName}
+                                                            Resp: {info.customerName || 'N/A'}
                                                         </span>
                                                     </div>
                                                 </td>
@@ -374,18 +374,18 @@ export default function PrintOrders() {
                             <div style={{ marginBottom: '10px' }}>
                                 <p style={{ margin: '2px 0', fontSize: '14px', fontWeight: 'bold' }}>LOJA:</p>
                                 <p style={{ margin: '0 0 4px 0', fontSize: '15px' }}>
-                                    {extractOrderInfo(order.status).storeName.toUpperCase() || 'VENDA DIRETA'}
+                                    {(extractOrderInfo(order.status).storeName || '').toUpperCase() || 'VENDA DIRETA'}
                                 </p>
                                 <p style={{ margin: '2px 0', fontSize: '12px', fontWeight: 'bold' }}>RESPONSÁVEL:</p>
                                 <p style={{ margin: '0 0 8px 0', fontSize: '14px' }}>
-                                    {extractOrderInfo(order.status).customerName.toUpperCase()}
+                                    {(extractOrderInfo(order.status).customerName || '').toUpperCase() || 'N/A'}
                                 </p>
                             </div>
 
                             <div style={{ borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '10px 0', marginBottom: '10px' }}>
                                 <p style={{ margin: '0 0 8px 0', fontSize: '12px', fontWeight: 'bold' }}>ITENS DO PEDIDO</p>
                                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '12px', lineHeight: '1.4' }}>
-                                    {extractOrderInfo(order.status).itemsText.split(', ').map((item, idx) => (
+                                    {(extractOrderInfo(order.status).itemsText || '').split(', ').filter(Boolean).map((item, idx) => (
                                         <li key={idx} style={{ marginBottom: '4px' }}>- {item}</li>
                                     ))}
                                 </ul>
