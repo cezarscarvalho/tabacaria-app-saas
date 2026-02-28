@@ -23,3 +23,51 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-neutral-500;
 }
+
+/* --- Estilos para Impressão Térmica (Thermal Printer) --- */
+@media print {
+
+  /* Esconde tudo que não deve ser impresso por padrão */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Esconde elementos específicos para garantir */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Mostra apenas a div de impressão e seus filhos */
+  #print-area,
+  #print-area * {
+    visibility: visible;
+  }
+
+  /* Posiciona a div de impressão no topo esquerdo do papel */
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    /* Remove fundo escuro para economizar tinta do papel térmico (mesmo que seja cinza/preto no PC) */
+    background: white !important;
+    color: black !important;
+    /* Ajusta fonte para maior legibilidade na térmica */
+    font-family: monospace, sans-serif !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .receipt-item {
+    break-after: page;
+    padding-bottom: 20px;
+    border-bottom: 1px dashed black;
+  }
+
+  /* Resetar margens da página que impressoras adicionam */
+  @page {
+    margin: 0;
+    /* Largura padrão comum é 80mm e 58mm, auto permite expandir. */
+    size: auto;
+  }
+}

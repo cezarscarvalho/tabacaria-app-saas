@@ -8,7 +8,8 @@ import Suppliers from '../components/admin/Suppliers';
 import Settings from '../components/admin/Settings';
 import Orders from '../components/admin/Orders';
 import Finance from '../components/admin/Finance';
-import { Plus, Package, RefreshCw, LayoutDashboard, LogOut, Users, Truck, Settings as SettingsIcon, ClipboardList, TrendingUp } from 'lucide-react';
+import PrintOrders from '../components/admin/PrintOrders';
+import { Plus, Package, RefreshCw, LayoutDashboard, LogOut, Users, Truck, Settings as SettingsIcon, ClipboardList, TrendingUp, Printer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Admin() {
@@ -192,6 +193,8 @@ export default function Admin() {
         switch (activeTab) {
             case 'finance':
                 return <Finance />;
+            case 'print':
+                return <PrintOrders />;
             case 'orders':
                 return <Orders />;
             case 'products':
@@ -225,6 +228,13 @@ export default function Admin() {
                         >
                             <TrendingUp size={18} className={activeTab === 'finance' ? 'text-dark-900' : ''} />
                             Financeiro
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('print')}
+                            className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm w-full text-left ${activeTab === 'print' ? 'bg-primary border border-primary/20 text-dark-900 shadow-sm' : 'text-neutral-400 hover:bg-dark-700/50 hover:text-white'}`}
+                        >
+                            <Printer size={18} className={activeTab === 'print' ? 'text-dark-900' : ''} />
+                            Impressão
                         </button>
                         <button
                             onClick={() => setActiveTab('orders')}

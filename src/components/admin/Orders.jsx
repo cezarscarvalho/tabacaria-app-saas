@@ -211,14 +211,17 @@ export default function Orders() {
                                                         onChange={(e) => handleStatusChange(order.id, e.target.value, order.status)}
                                                         className={`w-full text-sm font-semibold rounded-lg px-3 py-2 border outline-none transition-colors appearance-none cursor-pointer text-center
                                                             ${currentBadgeStatus === 'Novo Pedido' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:border-amber-500/50' :
-                                                                currentBadgeStatus === 'Entregue' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:border-emerald-500/50' :
-                                                                    currentBadgeStatus === 'Cancelado' ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:border-red-500/50' :
-                                                                        'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:border-blue-500/50'
+                                                                currentBadgeStatus === 'Entregue' || currentBadgeStatus === 'Finalizado' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:border-emerald-500/50' :
+                                                                    currentBadgeStatus === 'Impresso' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20 hover:border-purple-500/50' :
+                                                                        currentBadgeStatus === 'Cancelado' ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:border-red-500/50' :
+                                                                            'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:border-blue-500/50'
                                                             }`}
                                                     >
                                                         <option value="Novo Pedido" className="bg-dark-800 text-white">🟠 Novo Pedido</option>
                                                         <option value="Pendente" className="bg-dark-800 text-white">🔵 Pendente</option>
+                                                        <option value="Impresso" className="bg-dark-800 text-white">🟣 Impresso</option>
                                                         <option value="Entregue" className="bg-dark-800 text-white">🟢 Entregue</option>
+                                                        <option value="Finalizado" className="bg-dark-800 text-white">🏁 Finalizado</option>
                                                         <option value="Cancelado" className="bg-dark-800 text-white">🔴 Cancelado</option>
                                                     </select>
                                                 );
