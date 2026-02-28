@@ -55,10 +55,11 @@ export default function Admin() {
     };
 
     const formatPrice = (price) => {
+        const validPrice = typeof price === 'number' ? price : parseFloat(price);
         return new Intl.NumberFormat('pt-BR', {
             style: 'currency',
             currency: 'BRL'
-        }).format(price || 0);
+        }).format(isNaN(validPrice) ? 0 : validPrice);
     };
 
     const handleLogin = (newSession, needsChange) => {

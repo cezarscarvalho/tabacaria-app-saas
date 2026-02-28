@@ -7,10 +7,11 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
     const total = cart.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
 
     const formatPrice = (price) => {
+        const validPrice = typeof price === 'number' ? price : parseFloat(price);
         return new Intl.NumberFormat('pt-BR', {
             style: 'currency',
             currency: 'BRL'
-        }).format(price || 0);
+        }).format(isNaN(validPrice) ? 0 : validPrice);
     };
 
     const handleCheckout = () => {

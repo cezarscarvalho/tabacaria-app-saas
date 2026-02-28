@@ -5,10 +5,11 @@ export default function ProductCard({ product, addToCart }) {
     const [added, setAdded] = useState(false);
 
     const formatPrice = (price) => {
+        const validPrice = typeof price === 'number' ? price : parseFloat(price);
         return new Intl.NumberFormat('pt-BR', {
             style: 'currency',
             currency: 'BRL'
-        }).format(price || 0);
+        }).format(isNaN(validPrice) ? 0 : validPrice);
     };
 
     const handleAddToCart = () => {
@@ -48,8 +49,8 @@ export default function ProductCard({ product, addToCart }) {
                 <button
                     onClick={handleAddToCart}
                     className={`w-full font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all duration-300 ${added
-                            ? 'bg-emerald-500 text-white hover:bg-emerald-400'
-                            : 'bg-primary hover:bg-primary-hover text-dark-900 shadow-[0_4px_14px_rgb(234,179,8,0.2)]'
+                        ? 'bg-emerald-500 text-white hover:bg-emerald-400'
+                        : 'bg-primary hover:bg-primary-hover text-dark-900 shadow-[0_4px_14px_rgb(234,179,8,0.2)]'
                         }`}
                 >
                     {added ? (
