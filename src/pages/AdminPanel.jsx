@@ -3,157 +3,47 @@ import { supabase } from '../supabaseClient';
 import {
     Package, ClipboardList, LogOut, Truck, LayoutDashboard,
     MessageCircle, TrendingUp, RefreshCw, Users, Settings as SettingsIcon,
-    Bell, Clock, Search, Zap, PackageOpen, Calculator, AlertCircle
+    Bell, Clock, Search, Zap, PackageOpen, Calculator, AlertCircle,
+    Send, Store, CheckCircle2, X
 } from 'lucide-react';
 
-// Sub-componentes Admin - Importação Externa (Para as abas estáveis)
-import Orders from '../components/admin/Orders';
-import Messages from '../components/admin/Messages';
-import Finance from '../components/admin/Finance';
-import Clients from '../components/admin/Clients';
-import Settings from '../components/admin/Settings';
-
 /**
- * COMPONENTE LOGÍSTICA INJETADO DIRETAMENTE
- * Objetivo: Evitar erros de cache e garantir integridade de escrita.
+ * ADMIN PANEL - VERSÃO DE EMERGÊNCIA (ESTÁVEL)
+ * Arquitetura de Carregamento Único para evitar Loops e Corrupção.
  */
-function InternalLogistics({ ordersData, refreshFunc }) {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedIds, setSelectedIds] = useState([]);
-
-    // 1. Consolidação com Proteção Total
-    const consolidation = useMemo(() => {
-        try {
-            const itemMap = {};
-            let globalTotal = 0;
-            const confirmedOrders = (ordersData || []).filter(o => o.enviado_logistica === true);
-
-            confirmedOrders.forEach(order => {
-                const parts = (order.status || '').split(' - ');
-                if (parts.length >= 2) {
-                    parts[1].split(', ').forEach(raw => {
-                        const match = raw.match(/(.+) \((\d+)[x| un]*\)/i) || raw.match(/^(\d+)[x| un]*\s+(.+)$/i);
-                        if (match) {
-                            const name = (match[1].match(/^\d+/) ? match[2] : match[1]).trim();
-                            const qty = parseInt(match[1].match(/^\d+/) ? match[1] : match[2]) || 1;
-                            itemMap[name] = (itemMap[name] || 0) + qty;
-                            globalTotal += qty;
-                        } else if (raw.trim()) {
-                            itemMap[raw.trim()] = (itemMap[raw.trim()] || 0) + 1;
-                            globalTotal += 1;
-                        }
-                    });
-                }
-            });
-
-            const list = Object.entries(itemMap)
-                .map(([name, qty], idx) => ({ id: `inj-${idx}-${name}`, name, qty }))
-                .sort((a, b) => a.name.localeCompare(b.name));
-
-            return { list, globalTotal, error: false };
-        } catch (err) {
-            console.error('[INJECTED-LOGISTICS-ERROR]', err);
-            return { list: [], globalTotal: 0, error: true };
-        }
-    }, [ordersData]);
-
-    const { list: consolidatedList, globalTotal, error: hasError } = consolidation;
-    const filteredList = consolidatedList.filter(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()));
-
-    const toggleItem = (id) => setSelectedIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
-    const sendOrder = () => {
-        const selected = filteredList.filter(i => selectedIds.includes(i.id));
-        if (selected.length === 0) return alert('Selecione itens primeiro!');
-        let text = `*PEDIDO LOGÍSTICA* 🚚%0A*Data:* ${new Date().toLocaleDateString()}%0A%0A`;
-        selected.forEach(i => text += `• ${i.name}: *${i.qty} un*%0A`);
-        text += `%0A*Total Selecionado: ${selected.reduce((a, b) => a + b.qty, 0)} unidades*`;
-        window.open(`https://wa.me/?text=${text}`, '_blank');
-    };
-
-    return (
-        <div className="animate-in fade-in duration-700">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
-                <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter flex items-center gap-3">
-                    <Truck className="text-primary" /> Centro de Triagem Premium
-                </h1>
-                <div className="relative w-full lg:w-80">
-                    <input
-                        type="text" placeholder="Filtrar Marca/Produto..." value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        className="w-full bg-dark-800 border-2 border-dark-700 rounded-2xl pl-12 pr-4 py-4 text-white focus:border-primary outline-none font-bold shadow-xl"
-                    />
-                    <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
-                </div>
-            </div>
-
-            <div className={`p-10 rounded-[2.5rem] border-2 mb-10 transition-all ${hasError ? 'bg-red-500/10 border-red-500/40' : 'bg-gradient-to-br from-primary to-emerald-400 border-primary/20 shadow-2xl shadow-primary/10'}`}>
-                {hasError ? (
-                    <div className="flex items-center gap-4 text-red-500"><AlertCircle size={40} /><h2 className="text-2xl font-black uppercase italic">Erro ao calcular volume</h2></div>
-                ) : (
-                    <div className="relative z-10">
-                        <span className="text-dark-900/50 font-black uppercase text-[10px] tracking-widest block mb-1">Carga Consolidada do Dia</span>
-                        <h2 className="text-5xl font-black text-dark-900 uppercase italic tracking-tighter">Volume Total: <span className="text-white underline decoration-dark-900/10">{globalTotal}</span> pacotes</h2>
-                    </div>
-                )}
-            </div>
-
-            <div className="grid grid-cols-1 gap-6">
-                <div className="bg-dark-900/50 p-6 rounded-3xl border border-dark-700 flex justify-between items-center">
-                    <div className="flex gap-3">
-                        <button onClick={() => setSelectedIds(filteredList.map(i => i.id))} className="px-4 py-3 bg-dark-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-dark-600 hover:bg-dark-700 transition-all">Todos</button>
-                        <button onClick={() => setSelectedIds([])} className="px-4 py-3 bg-dark-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest border border-dark-600 hover:bg-dark-700 transition-all">Limpar</button>
-                    </div>
-                    <button onClick={sendOrder} className="bg-primary text-dark-900 font-black py-4 px-10 rounded-2xl uppercase tracking-[0.2em] shadow-xl hover:scale-105 transition-all text-xs italic">Gerar Pedido WhatsApp</button>
-                </div>
-
-                <div className="bg-dark-800 rounded-[2.5rem] border-2 border-dark-700 overflow-hidden shadow-2xl">
-                    <table className="w-full text-left">
-                        <thead className="bg-dark-900 border-b-2 border-dark-700 text-neutral-500 font-black text-[10px] uppercase tracking-widest">
-                            <tr><th className="p-8 w-20 text-center">Sel</th><th className="p-8">Produto</th><th className="p-8 text-right">Qtd Total</th></tr>
-                        </thead>
-                        <tbody className="divide-y divide-dark-700">
-                            {filteredList.map(item => {
-                                const isSelected = selectedIds.includes(item.id);
-                                return (
-                                    <tr key={item.id} onClick={() => toggleItem(item.id)} className={`hover:bg-dark-700/50 cursor-pointer transition-all ${isSelected ? 'bg-primary/5' : ''}`}>
-                                        <td className="p-8 text-center"><div className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center mx-auto transition-all ${isSelected ? 'bg-primary border-primary rotate-12' : 'border-dark-600'}`}>{isSelected && <Zap size={16} className="text-dark-900 fill-current" />}</div></td>
-                                        <td className="p-8 font-black text-white italic text-xl uppercase tracking-tighter group-hover:text-primary">{item.name}</td>
-                                        <td className="p-8 text-right"><span className={`inline-block font-black px-6 py-2 rounded-xl border-2 ${isSelected ? 'bg-primary text-dark-900 border-primary' : 'bg-dark-900 text-neutral-500 border-dark-700'}`}>{item.qty} un</span></td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// COMPONENTE PRINCIPAL ADMINPANEL
 export default function AdminPanel() {
-    console.log('[DEBUG-INJECTION] Renderizando Admin Core com Logística Integrada.');
-
     const [session, setSession] = useState(null);
     const [activeTab, setActiveTab] = useState('vendas');
+    const [loading, setLoading] = useState(false);
+    const [lastSync, setLastSync] = useState('--:--:--');
+
+    // Estados de Dados
     const [orders, setOrders] = useState([]);
     const [messages, setMessages] = useState([]);
     const [clients, setClients] = useState([]);
     const [settings, setSettings] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [lastSync, setLastSync] = useState('--:--:--');
 
-    // Auth & Data Flow
+    // Filtros e Seleções (Logística)
+    const [logSearch, setLogSearch] = useState('');
+    const [selectedLogIds, setSelectedLogIds] = useState([]);
+
+    // 1. SEGURANÇA: useEffect com [] para evitar Loops
     useEffect(() => {
         let mounted = true;
-        supabase.auth.getSession().then(({ data: { session: s } }) => { if (mounted) setSession(s); });
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => { if (mounted) setSession(s); });
+        supabase.auth.getSession().then(({ data: { session: s } }) => {
+            if (mounted) setSession(s);
+        });
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
+            if (mounted) setSession(s);
+        });
         return () => { mounted = false; subscription.unsubscribe(); };
     }, []);
 
-    useEffect(() => { if (session) fetchAll(); }, [session]);
+    useEffect(() => {
+        if (session) fetchAllData();
+    }, [session]);
 
-    const fetchAll = async () => {
+    const fetchAllData = async () => {
         if (loading) return;
         setLoading(true);
         try {
@@ -168,50 +58,91 @@ export default function AdminPanel() {
             setClients(clis.data || []);
             setSettings(cfgs.data || null);
             setLastSync(new Date().toLocaleTimeString());
-        } catch (e) { console.error('Error syncing:', e); }
+        } catch (err) {
+            console.error('Erro na sincronização:', err);
+        }
         setLoading(false);
     };
 
-    if (!session) {
-        return (
-            <div className="min-h-screen bg-black flex items-center justify-center p-8">
-                <div className="bg-dark-800 p-12 rounded-[3.5rem] border border-dark-700 text-center animate-in zoom-in duration-500">
-                    <Package className="text-primary mx-auto mb-6 animate-pulse" size={60} />
-                    <h3 className="text-white font-black text-2xl uppercase italic italic">Acesso Restrito</h3>
-                    <p className="text-neutral-500 font-bold uppercase tracking-widest text-[9px] mt-2">Sincronizando Credenciais...</p>
-                </div>
-            </div>
-        );
-    }
+    // --- LÓGICA DE LOGÍSTICA (O CORAÇÃO) ---
+    const logisticsData = useMemo(() => {
+        try {
+            const itemMap = {};
+            let totalVolume = 0;
+            const confirmed = orders.filter(o => o.enviado_logistica === true);
 
-    const renderTab = () => {
-        const commProps = { refreshFunc: fetchAll };
-        switch (activeTab) {
-            case 'vendas': return <Orders ordersData={orders} {...commProps} />;
-            case 'mensagens': return <Messages messagesData={messages} {...commProps} />;
-            case 'logistica': return <InternalLogistics ordersData={orders} {...commProps} />;
-            case 'financeiro': return <Finance ordersData={orders} {...commProps} />;
-            case 'clientes': return <Clients clientsData={clients} {...commProps} />;
-            case 'configuracoes': return <Settings session={session} settingsData={settings} {...commProps} />;
-            default: return <Orders ordersData={orders} {...commProps} />;
+            confirmed.forEach(order => {
+                const parts = (order.status || '').split(' - ');
+                if (parts.length >= 2) {
+                    const itemsText = parts[1];
+                    itemsText.split(', ').forEach(raw => {
+                        const match = raw.match(/(.+) \((\d+)[x| un]*\)/i) || raw.match(/^(\d+)[x| un]*\s+(.+)$/i);
+                        if (match) {
+                            const name = (match[1].match(/^\d+/) ? match[2] : match[1]).trim();
+                            const qty = parseInt(match[1].match(/^\d+/) ? match[1] : match[2]) || 1;
+                            itemMap[name] = (itemMap[name] || 0) + qty;
+                            totalVolume += qty;
+                        } else if (raw.trim()) {
+                            itemMap[raw.trim()] = (itemMap[raw.trim()] || 0) + 1;
+                            totalVolume += 1;
+                        }
+                    });
+                }
+            });
+
+            const list = Object.entries(itemMap)
+                .map(([name, qty], idx) => ({ id: `log-${idx}`, name, qty }))
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+            return { list, totalVolume };
+        } catch (e) {
+            return { list: [], totalVolume: 0 };
         }
+    }, [orders]);
+
+    const filteredLogistics = logisticsData.list.filter(item =>
+        item.name.toLowerCase().includes(logSearch.toLowerCase())
+    );
+
+    const handleSendLogistics = () => {
+        const selected = filteredLogistics.filter(i => selectedLogIds.includes(i.id));
+        if (selected.length === 0) return alert('Selecione itens primeiro!');
+        let text = `*PEDIDO PARA FORNECEDOR* 🚚%0A*Data:* ${new Date().toLocaleDateString()}%0A%0A`;
+        selected.forEach(i => text += `• ${i.name}: *${i.qty} un*%0A`);
+        text += `%0A*Volume Total Selecionado: ${selected.reduce((a, b) => a + b.qty, 0)} unidades*`;
+        window.open(`https://wa.me/?text=${text}`, '_blank');
     };
+
+    // --- MENSAGENS: RESPOSTA RÁPIDA ---
+    const replyMessage = (msg) => {
+        const text = `Olá! Respondendo sua dúvida: "${msg.conteudo}"%0A%0A`;
+        window.open(`https://wa.me/${msg.whatsapp?.replace(/\D/g, '')}?text=${text}`, '_blank');
+    };
+
+    if (!session) return (
+        <div className="min-h-screen bg-black flex items-center justify-center p-8">
+            <div className="text-center animate-pulse">
+                <Package className="text-primary mx-auto mb-4" size={50} />
+                <p className="text-primary uppercase font-black tracking-widest text-xs">Sincronizando Admin...</p>
+            </div>
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-neutral-200 flex flex-col md:flex-row h-screen overflow-hidden font-sans">
-            <aside className="w-full md:w-72 bg-dark-800 border-r border-dark-700 flex flex-col h-full z-50">
+            {/* Sidebar Shell */}
+            <aside className="w-full md:w-72 bg-dark-800 border-r border-dark-700 flex flex-col h-full z-50 shadow-2xl">
                 <div className="h-24 px-8 flex items-center gap-4 bg-dark-900/40 border-b border-dark-700">
                     <div className="p-2 bg-primary/10 rounded-xl border border-primary/20"><Package className="text-primary" size={24} /></div>
                     <h2 className="font-black text-white text-2xl tracking-tighter uppercase leading-none">HUB<span className="text-primary">ADMIN</span></h2>
                 </div>
 
-                <nav className="flex-1 p-6 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
+                <nav className="flex-1 p-6 flex flex-col gap-2 overflow-y-auto no-scrollbar">
                     <TabBtn active={activeTab === 'vendas'} icon={<ClipboardList size={18} />} label="Vendas" onClick={() => setActiveTab('vendas')} />
-                    <TabBtn active={activeTab === 'mensagens'} icon={<MessageCircle size={18} />} label="Suporte" onClick={() => setActiveTab('mensagens')} badge={messages.filter(m => !m.lida).length} />
                     <TabBtn active={activeTab === 'logistica'} icon={<Truck size={18} />} label="Logística" onClick={() => setActiveTab('logistica')} />
+                    <TabBtn active={activeTab === 'mensagens'} icon={<MessageCircle size={18} />} label="Suporte" onClick={() => setActiveTab('mensagens')} badge={messages.filter(m => !m.lida).length} />
                     <TabBtn active={activeTab === 'clientes'} icon={<Users size={18} />} label="Clientes" onClick={() => setActiveTab('clientes')} />
-                    <TabBtn active={activeTab === 'financeiro'} icon={<TrendingUp size={18} />} label="Financeiro" onClick={() => setActiveTab('financeiro')} />
-                    <div className="h-px bg-dark-700 my-4 mx-2"></div>
+                    <div className="h-px bg-dark-700 my-4 mx-2 opacity-50"></div>
                     <TabBtn active={activeTab === 'configuracoes'} icon={<SettingsIcon size={18} />} label="Configurações" onClick={() => setActiveTab('configuracoes')} />
                 </nav>
 
@@ -220,20 +151,184 @@ export default function AdminPanel() {
                 </div>
             </aside>
 
-            <main className="flex-1 flex flex-col h-screen overflow-hidden">
-                <header className="h-24 bg-dark-800 border-b border-dark-700 flex items-center justify-between px-10 shrink-0">
+            {/* Main Area */}
+            <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
+                <header className="h-24 bg-dark-800 border-b border-dark-700 flex items-center justify-between px-10 shrink-0 shadow-lg">
                     <div className="flex flex-col">
                         <h2 className="text-xl font-black text-white italic uppercase tracking-tighter">{activeTab} <span className="text-neutral-600 font-normal">/ Admin Panel</span></h2>
-                        <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mt-1.5 flex items-center gap-2"><Clock size={10} /> Sync: {lastSync}</span>
+                        <span className="text-[8px] font-black text-neutral-500 uppercase tracking-widest mt-1.5 flex items-center gap-2 tracking-[0.2em]"><Clock size={10} /> Sincronizado: {lastSync}</span>
                     </div>
                     <div className="flex items-center gap-4">
-                        <button onClick={fetchAll} disabled={loading} className="px-6 py-3.5 bg-primary text-dark-900 rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all flex items-center gap-2 shadow-xl shadow-primary/20">{loading ? <RefreshCw className="animate-spin" size={14} /> : <RefreshCw size={14} />} {loading ? 'Sincronizando' : 'Sync Dados'}</button>
-                        <button onClick={() => window.location.href = '/'} className="p-3 bg-dark-700 hover:bg-dark-600 rounded-xl border border-dark-600 transition-all"><LayoutDashboard size={20} /></button>
+                        <button onClick={fetchAllData} disabled={loading} className="px-6 py-3.5 bg-primary text-dark-900 rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all flex items-center gap-2 shadow-xl shadow-primary/20">
+                            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> {loading ? 'Carregando' : 'Sincronizar'}
+                        </button>
+                        <button onClick={() => window.location.href = '/'} className="p-3 bg-dark-700 hover:bg-dark-600 rounded-xl border border-dark-600 transition-all shadow-lg"><LayoutDashboard size={20} /></button>
                     </div>
                 </header>
 
-                <div className="flex-1 p-10 overflow-y-auto bg-[#0a0a0a] custom-scrollbar animate-in fade-in duration-1000">
-                    <div className="max-w-7xl mx-auto pb-10">{renderTab()}</div>
+                <div className="flex-1 p-10 overflow-y-auto bg-[#0a0a0a] custom-scrollbar animate-in fade-in duration-500">
+                    <div className="max-w-7xl mx-auto pb-10">
+
+                        {/* ABA VENDAS */}
+                        {activeTab === 'vendas' && (
+                            <div className="animate-in slide-in-from-bottom-4 duration-700">
+                                <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-8 flex items-center gap-3"><ClipboardList className="text-primary" /> Itens Vendidos</h1>
+                                <div className="bg-dark-800 border-2 border-dark-700 rounded-[2.5rem] overflow-hidden shadow-2xl">
+                                    <table className="w-full text-left">
+                                        <thead className="bg-dark-900 border-b-2 border-dark-700 text-neutral-500 font-black uppercase text-[10px]">
+                                            <tr><th className="p-8">Cliente</th><th className="p-8">Pedido / Detalhes</th><th className="p-8 text-center text-primary">Logística?</th><th className="p-8 text-right">Valor</th></tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-dark-700">
+                                            {orders.map(o => (
+                                                <tr key={o.id} className="hover:bg-dark-700/30 transition-all font-bold group">
+                                                    <td className="p-8 text-white uppercase italic">{o.nome_cliente || 'Final/Consumidor'}</td>
+                                                    <td className="p-8 text-neutral-500 text-xs max-w-sm truncate italic">{o.status}</td>
+                                                    <td className="p-8 text-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={o.enviado_logistica || false}
+                                                            onChange={async (e) => {
+                                                                await supabase.from('pedidos').update({ enviado_logistica: e.target.checked }).eq('id', o.id);
+                                                                fetchAllData();
+                                                            }}
+                                                            className="w-6 h-6 rounded-lg accent-primary cursor-pointer transition-transform hover:scale-110"
+                                                        />
+                                                    </td>
+                                                    <td className="p-8 text-right text-primary font-black italic">R$ {o.total?.toLocaleString('pt-BR')}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ABA LOGÍSTICA (O CORAÇÃO) */}
+                        {activeTab === 'logistica' && (
+                            <div className="animate-in slide-in-from-bottom-4 duration-700">
+                                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
+                                    <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter flex items-center gap-3"><Truck className="text-primary" /> Centro de Triagem</h1>
+                                    <div className="relative w-full lg:w-80 shadow-2xl">
+                                        <input
+                                            type="text" placeholder="Filtrar Marca/Produto..." value={logSearch}
+                                            onChange={e => setLogSearch(e.target.value)}
+                                            className="w-full bg-dark-800 border-2 border-dark-700 rounded-2xl pl-12 pr-4 py-4 text-white focus:border-primary outline-none font-bold"
+                                        />
+                                        <Search size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
+                                    </div>
+                                </div>
+
+                                {/* CONTADOR DE VOLUME TOTAL */}
+                                <div className="p-10 rounded-[2.5rem] border-2 border-primary/20 bg-gradient-to-br from-primary to-emerald-400 shadow-2xl shadow-primary/10 mb-10 group overflow-hidden relative">
+                                    <PackageOpen size={180} className="absolute -right-8 -bottom-8 text-dark-900/10 group-hover:scale-110 transition-transform duration-700" />
+                                    <div className="relative z-10">
+                                        <span className="text-dark-900/50 font-black uppercase text-[10px] tracking-widest block mb-1">Carga Geral Consolidada</span>
+                                        <h2 className="text-5xl font-black text-dark-900 uppercase italic tracking-tighter">Volume Total: <span className="text-white drop-shadow-lg">{logisticsData.totalVolume}</span> pacotes</h2>
+                                        <p className="mt-4 text-dark-900/60 font-bold uppercase text-[9px] tracking-widest">Soma de todos os itens marcados na aba Vendas</p>
+                                    </div>
+                                </div>
+
+                                <div className="bg-dark-800 border-2 border-dark-700 rounded-[2.5rem] overflow-hidden shadow-2xl">
+                                    {/* BARRA DE AÇÕES LOGÍSTICA */}
+                                    <div className="p-6 bg-dark-900 border-b border-dark-700 flex flex-wrap justify-between items-center gap-4">
+                                        <div className="flex gap-2">
+                                            <button onClick={() => setSelectedLogIds(filteredLogistics.map(i => i.id))} className="px-5 py-3 bg-dark-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-dark-600">Sim, Todos</button>
+                                            <button onClick={() => setSelectedLogIds([])} className="px-5 py-3 bg-dark-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-dark-600">Limpar</button>
+                                        </div>
+                                        <button onClick={handleSendLogistics} className="bg-primary hover:scale-105 active:scale-95 text-dark-900 font-black py-4 px-10 rounded-2xl uppercase tracking-[0.2em] shadow-xl text-xs italic transition-all">Enviar Selecionados via WA</button>
+                                    </div>
+
+                                    <table className="w-full text-left">
+                                        <thead className="bg-dark-900 text-neutral-500 font-black uppercase text-[10px] tracking-widest">
+                                            <tr><th className="p-8 w-24 text-center">Sel</th><th className="p-8">Especificação do Produto</th><th className="p-8 text-right">Quantidade</th></tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-dark-700">
+                                            {filteredLogistics.map(item => {
+                                                const isSel = selectedLogIds.includes(item.id);
+                                                return (
+                                                    <tr key={item.id} onClick={() => setSelectedLogIds(p => p.includes(item.id) ? p.filter(x => x !== item.id) : [...p, item.id])} className={`hover:bg-dark-700/50 cursor-pointer group transition-all ${isSel ? 'bg-primary/5' : ''}`}>
+                                                        <td className="p-8 text-center">
+                                                            <div className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center mx-auto transition-all ${isSel ? 'bg-primary border-primary rotate-12' : 'border-dark-600 group-hover:border-primary/30'}`}>
+                                                                {isSel && <Zap size={16} className="text-dark-900 fill-current" />}
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-8 font-black text-white italic text-xl uppercase tracking-tighter group-hover:text-primary transition-colors">{item.name}</td>
+                                                        <td className="p-8 text-right">
+                                                            <span className={`inline-block font-black px-6 py-2 rounded-xl border-2 transition-all ${isSel ? 'bg-primary text-dark-900 border-primary' : 'bg-dark-900 text-neutral-500 border-dark-700'}`}>{item.qty} un</span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ABA MENSAGENS */}
+                        {activeTab === 'mensagens' && (
+                            <div className="animate-in slide-in-from-bottom-4 duration-700">
+                                <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-8 flex items-center gap-3"><MessageCircle className="text-primary" /> Suporte ao Cliente</h1>
+                                <div className="grid grid-cols-1 gap-6">
+                                    {messages.map(m => (
+                                        <div key={m.id} className="bg-dark-800 border-2 border-dark-700 p-8 rounded-[2rem] hover:border-primary/20 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <span className="text-primary font-black uppercase text-[10px] tracking-[0.2em]">{m.nome}</span>
+                                                    <span className="text-neutral-600 text-[10px] uppercase font-bold">• {new Date(m.created_at).toLocaleDateString()}</span>
+                                                </div>
+                                                <p className="text-white font-bold italic text-lg leading-tight uppercase tracking-tight">"{m.conteudo}"</p>
+                                            </div>
+                                            <button onClick={() => replyMessage(m)} className="bg-primary/10 hover:bg-primary text-primary hover:text-dark-900 border border-primary/20 p-5 rounded-2xl flex items-center gap-3 transition-all font-black uppercase text-[10px] tracking-widest whitespace-nowrap">
+                                                <Send size={18} /> Responder WA
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ABA CLIENTES */}
+                        {activeTab === 'clientes' && (
+                            <div className="animate-in slide-in-from-bottom-4 duration-700">
+                                <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-8 flex items-center gap-3"><Users className="text-primary" /> Prospecção de Lojas</h1>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {clients.map(c => (
+                                        <div key={c.id} className="bg-dark-800 border-2 border-dark-700 p-8 rounded-[2.5rem] hover:border-primary/30 transition-all group shadow-2xl">
+                                            <div className="flex justify-between items-start mb-6">
+                                                <div className="bg-dark-900 p-3 rounded-2xl border border-dark-700 group-hover:bg-primary/10 transition-colors"><Store className="text-primary" size={24} /></div>
+                                                <div className="flex gap-1">
+                                                    <div className="w-1.5 h-6 bg-primary/20 rounded-full"></div>
+                                                    <div className="w-1.5 h-6 bg-primary rounded-full"></div>
+                                                </div>
+                                            </div>
+                                            <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-1 italic truncate">{c.nome}</h3>
+                                            <p className="text-neutral-500 font-bold text-xs mb-8 uppercase tracking-widest">{c.whatsapp}</p>
+                                            <button
+                                                onClick={() => {
+                                                    const text = `Olá *${c.nome}*!%0AClique abaixo para conferir nosso catálogo atualizado:%0A%0A${settings?.link_catalogo || window.location.origin}`;
+                                                    window.open(`https://wa.me/${c.whatsapp?.replace(/\D/g, '')}?text=${text}`, '_blank');
+                                                }}
+                                                className="w-full bg-dark-900 hover:bg-primary text-neutral-400 hover:text-dark-900 font-black py-5 rounded-2xl uppercase text-[10px] tracking-[0.3em] transition-all border border-dark-700"
+                                            >
+                                                Enviar Catálogo
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ABA CONFIGURAÇÕES (PLACEHOLDER) */}
+                        {activeTab === 'configuracoes' && (
+                            <div className="p-20 text-center border-4 border-dashed border-dark-700 rounded-[4rem] animate-pulse">
+                                <SettingsIcon size={80} className="mx-auto text-neutral-800 mb-6" />
+                                <h1 className="text-4xl font-black text-neutral-700 uppercase italic">Ajustes Premium</h1>
+                                <p className="text-neutral-500 font-bold uppercase tracking-widest text-xs mt-4">Área de parametrização da loja sob demanda.</p>
+                            </div>
+                        )}
+
+                    </div>
                 </div>
             </main>
         </div>
@@ -243,9 +338,9 @@ export default function AdminPanel() {
 // BOTAO DE NAVEGAÇÃO REUTILIZÁVEL
 function TabBtn({ active, icon, label, onClick, badge }) {
     return (
-        <button onClick={onClick} className={`flex items-center justify-between px-6 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all ${active ? 'bg-primary text-dark-900 shadow-xl shadow-primary/20 scale-[1.03]' : 'text-neutral-500 hover:bg-dark-700 hover:text-white'}`}>
+        <button onClick={onClick} className={`flex items-center justify-between px-6 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all duration-300 ${active ? 'bg-primary text-dark-900 shadow-xl shadow-primary/30 scale-[1.05]' : 'text-neutral-500 hover:bg-dark-700 hover:text-white'}`}>
             <div className="flex items-center gap-4">{icon} {label}</div>
-            {badge > 0 && <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-[8px] font-black">{badge}</span>}
+            {badge > 0 && <span className="bg-red-500 text-white px-2.5 py-1 rounded-full text-[9px] font-black shadow-lg">{badge}</span>}
         </button>
     );
 }
