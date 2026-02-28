@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { TrendingUp, DollarSign, Calendar, Users, Award, BarChart3, Filter } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 export default function Finance() {
     const [orders, setOrders] = useState([]);
@@ -211,37 +210,18 @@ export default function Finance() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Chart Section */}
+                {/* Performance Summary Section */}
                 <div className="lg:col-span-2 bg-dark-800 border border-dark-700 p-6 rounded-2xl shadow-lg">
                     <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                        Desempenho de Vendas (6 meses)
+                        Resumo de Desempenho (Últimos 6 meses)
                     </h3>
-                    <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#2D2D2D" vertical={false} />
-                                <XAxis dataKey="name" stroke="#737373" fontSize={12} tickLine={false} axisLine={false} dy={10} />
-                                <YAxis stroke="#737373" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `R$${v}`} />
-                                <Tooltip
-                                    cursor={{ fill: '#2A2A2A', radius: 4 }}
-                                    content={({ active, payload }) => {
-                                        if (active && payload && payload.length) {
-                                            return (
-                                                <div className="bg-dark-900 border border-dark-600 p-3 rounded-xl shadow-2xl">
-                                                    <p className="text-emerald-400 font-bold">{formatPrice(payload[0].value)}</p>
-                                                </div>
-                                            );
-                                        }
-                                        return null;
-                                    }}
-                                />
-                                <Bar dataKey="Total" radius={[6, 6, 0, 0]} barSize={40}>
-                                    {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.isCurrent ? '#10B981' : '#1F2937'} stroke={entry.isCurrent ? '#10B981' : '#374151'} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+                    <div className="space-y-4">
+                        {chartData.map((data, index) => (
+                            <div key={index} className={`flex items-center justify-between p-4 rounded-xl border ${data.isCurrent ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-dark-900/50 border-dark-700'}`}>
+                                <span className={`font-bold ${data.isCurrent ? 'text-emerald-400' : 'text-neutral-400'}`}>{data.name}</span>
+                                <span className={`font-black ${data.isCurrent ? 'text-white' : 'text-neutral-300'}`}>{formatPrice(data.Total)}</span>
+                            </div>
+                        ))}
                     </div>
                 </div>
 

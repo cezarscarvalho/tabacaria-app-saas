@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../supabaseClient';
+import { Link } from 'react-router-dom';
 import ProductModal from '../components/ProductModal';
 import Login from '../components/Login';
 import ForcePasswordChange from '../components/ForcePasswordChange';
@@ -19,7 +20,7 @@ export default function Admin() {
     const [forcePasswordChange, setForcePasswordChange] = useState(false);
     const [activeTab, setActiveTab] = useState('orders');
     const [unreadMessages, setUnreadMessages] = useState(0);
-    const prevUnreadCount = React.useRef(0);
+    const prevUnreadCount = useRef(0);
 
     // Audio Notification logic
     useEffect(() => {
@@ -231,29 +232,39 @@ export default function Admin() {
     );
 
     const renderContent = () => {
-        switch (activeTab) {
-            case 'finance':
-                return <Finance />;
-            case 'billing':
-                return <Collections />;
-            case 'messages':
-                return <Messages />;
-            case 'logistics':
-                return <Logistics />;
-            case 'print':
-                return <PrintOrders />;
-            case 'orders':
-                return <Orders />;
-            case 'products':
-                return renderProducts();
-            case 'clients':
-                return <Clients />;
-            case 'suppliers':
-                return <Suppliers />;
-            case 'settings':
-                return <Settings session={session} />;
-            default:
-                return <Orders />;
+        try {
+            switch (activeTab) {
+                case 'finance':
+                    return <Finance />;
+                case 'billing':
+                    return <Collections />;
+                case 'messages':
+                    return <Messages />;
+                case 'logistics':
+                    return <Logistics />;
+                case 'print':
+                    return <PrintOrders />;
+                case 'orders':
+                    return <Orders />;
+                case 'products':
+                    return renderProducts();
+                case 'clients':
+                    return <Clients />;
+                case 'suppliers':
+                    return <Suppliers />;
+                case 'settings':
+                    return <Settings session={session} />;
+                default:
+                    return <Orders />;
+            }
+        } catch (error) {
+            console.error('Erro ao carregar aba:', error);
+            return (
+                <div className="p-8 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500">
+                    <h2 className="font-bold mb-2">Erro ao carregar esta seção</h2>
+                    <p className="text-sm">Ocorreu um problema ao carregar a aba {activeTab}. Tente alternar para outra seção ou atualizar a página.</p>
+                </div>
+            );
         }
     };
 

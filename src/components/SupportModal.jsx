@@ -7,7 +7,7 @@ export default function SupportModal({ isOpen, onClose }) {
         nome: '',
         estabelecimento: '',
         assunto: 'Dúvidas',
-        conteudo: ''
+        mensagem: ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
@@ -24,7 +24,7 @@ export default function SupportModal({ isOpen, onClose }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.nome || !formData.estabelecimento || !formData.conteudo) {
+        if (!formData.nome || !formData.estabelecimento || !formData.mensagem) {
             alert('Por favor, preencha todos os campos obrigatórios.');
             return;
         }
@@ -38,14 +38,14 @@ export default function SupportModal({ isOpen, onClose }) {
                     nome: formData.nome,
                     estabelecimento: formData.estabelecimento,
                     assunto: formData.assunto,
-                    conteudo: formData.conteudo,
+                    mensagem: formData.mensagem,
                     lida: false
                 }]);
 
             if (error) throw error;
 
             // 2. Format WhatsApp message
-            const text = `*NOVA MENSAGEM DE SUPORTE*%0A%0A*De:* ${formData.nome}%0A*Loja:* ${formData.estabelecimento}%0A*Assunto:* ${formData.assunto}%0A%0A*Mensagem:*%0A${formData.conteudo}`;
+            const text = `*NOVA MENSAGEM DE SUPORTE*%0A%0A*De:* ${formData.nome}%0A*Loja:* ${formData.estabelecimento}%0A*Assunto:* ${formData.assunto}%0A%0A*Mensagem:*%0A${formData.mensagem}`;
 
             const phoneNumber = import.meta.env.VITE_WHATSAPP_NUMBER || '5511988541006';
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${text}`;
@@ -53,10 +53,11 @@ export default function SupportModal({ isOpen, onClose }) {
             // 3. Open WhatsApp
             window.open(whatsappUrl, '_blank');
 
+            alert('Mensagem enviada!');
             setIsSuccess(true);
             setTimeout(() => {
                 setIsSuccess(false);
-                setFormData({ nome: '', estabelecimento: '', assunto: 'Dúvidas', conteudo: '' });
+                setFormData({ nome: '', estabelecimento: '', assunto: 'Dúvidas', mensagem: '' });
                 onClose();
             }, 2000);
 
@@ -148,8 +149,8 @@ export default function SupportModal({ isOpen, onClose }) {
                                 <textarea
                                     required
                                     rows="4"
-                                    value={formData.conteudo}
-                                    onChange={(e) => setFormData({ ...formData, conteudo: e.target.value })}
+                                    value={formData.mensagem}
+                                    onChange={(e) => setFormData({ ...formData, mensagem: e.target.value })}
                                     className="w-full bg-dark-900 border border-dark-600 rounded-xl px-4 py-3 text-white outline-none focus:border-primary transition-all placeholder:text-neutral-600 resize-none"
                                     placeholder="Descreva sua dúvida, sugestão ou problema..."
                                 ></textarea>

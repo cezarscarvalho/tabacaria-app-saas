@@ -151,7 +151,7 @@ export default function Messages() {
                                         <span>Assunto: {msg.assunto}</span>
                                     </div>
                                     <p className="text-neutral-300 leading-relaxed bg-dark-900/50 p-4 rounded-xl border border-dark-700/50">
-                                        {msg.conteudo}
+                                        {msg.mensagem}
                                     </p>
                                 </div>
 
