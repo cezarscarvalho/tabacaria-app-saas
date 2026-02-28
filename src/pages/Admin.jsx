@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
 import ProductModal from '../components/ProductModal';
 import Login from '../components/Login';
+import ForcePasswordChange from '../components/ForcePasswordChange';
 import { Plus, Package, RefreshCw, LayoutDashboard, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Admin() {
     const [session, setSession] = useState(null);
+    const [forcePasswordChange, setForcePasswordChange] = useState(false);
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -59,8 +61,19 @@ export default function Admin() {
         }).format(price || 0);
     };
 
+    const handleLogin = (newSession, needsChange) => {
+        setSession(newSession);
+        if (needsChange) {
+            setForcePasswordChange(true);
+        }
+    };
+
     if (!session) {
-        return <Login onLogin={setSession} />;
+        return <Login onLogin={handleLogin} />;
+    }
+
+    if (forcePasswordChange) {
+        return <ForcePasswordChange onComplete={() => setForcePasswordChange(false)} />;
     }
 
     return (
