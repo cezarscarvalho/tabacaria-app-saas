@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { Truck, Send, CheckCircle2, Package, AlertCircle } from 'lucide-react';
+import { Truck, Send, CheckCircle2, Package, AlertCircle, Trash2 } from 'lucide-react';
 import { formatarNumeroWhats } from '../../utils/whatsapp';
 
 export default function Logistics() {
@@ -19,10 +19,11 @@ export default function Logistics() {
     const fetchInitialData = async () => {
         setLoading(true);
         try {
-            // 1. Buscar Pedidos Confirmados (que não foram processados ainda)
+            // 1. Buscar Pedidos Confirmados E ENVIADOS PARA LOGÍSTICA
             const { data: pedidos, error: pError } = await supabase
                 .from('pedidos')
                 .select('*')
+                .eq('enviado_logistica', true)
                 .ilike('status', '%Confirmado%')
                 .not('status', 'ilike', '%Pedido ao Fornecedor Realizado%');
 
@@ -103,6 +104,35 @@ export default function Logistics() {
         setConsolidatedItems(sortedList);
     };
 
+    const handleClearLogistics = async () => {
+        if (!orders.length) return;
+        if (!window.confirm(`Deseja marcar os ${orders.length} pedidos atuais como 'Processados' e limpar a lista de logística?`)) return;
+
+        setIsUpdating(true);
+        try {
+            for (const order of orders) {
+                const newStatus = `${order.status} | Processado Logística`;
+                await supabase
+                    .from('pedidos')
+                    .update({
+                        status: newStatus,
+                        enviado_logistica: false
+                    })
+                    .eq('id', order.id);
+            }
+            setSuccessMessage('Logística limpa e pedidos arquivados!');
+            setTimeout(() => {
+                setSuccessMessage('');
+                fetchInitialData();
+            }, 3000);
+        } catch (error) {
+            console.error('Erro ao limpar logística:', error);
+            alert('Erro ao processar limpeza.');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
     const handleSendToSupplier = async () => {
         if (!selectedSupplier) return alert('Por favor, selecione um fornecedor.');
 
@@ -166,6 +196,18 @@ export default function Logistics() {
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                     {consolidatedItems.length > 0 && (
                         <>
+                            <button
+                                onClick={handleClearLogistics}
+                                disabled={isUpdating}
+                                className="bg-dark-700 hover:bg-red-500/10 hover:text-red-500 text-neutral-400 font-bold px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all border border-dark-600 hover:border-red-500/30"
+                                title="Limpar lista e arquivar pedidos"
+                            >
+                                <Trash2 size={18} />
+                                <span className="hidden sm:inline">Limpar</span>
+                            </button>
+
+                            <div className="w-px h-10 bg-dark-700 hidden sm:block mx-1"></div>
+
                             <select
                                 value={selectedSupplier}
                                 onChange={(e) => setSelectedSupplier(e.target.value)}

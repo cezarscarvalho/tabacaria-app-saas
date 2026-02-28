@@ -105,6 +105,26 @@ export default function Orders() {
         }
     };
 
+    const handleToggleLogistics = async (id, isEnviado) => {
+        try {
+            // Optimistic UI update
+            setOrders(prev => prev.map(order =>
+                order.id === id ? { ...order, enviado_logistica: isEnviado } : order
+            ));
+
+            const { error } = await supabase
+                .from('pedidos')
+                .update({ enviado_logistica: isEnviado })
+                .eq('id', id);
+
+            if (error) throw error;
+        } catch (error) {
+            console.error('Erro ao alternar logística:', error.message);
+            alert('Erro ao atualizar logística do pedido.');
+            fetchOrders(); // Revert
+        }
+    };
+
     const handleDelete = async (id) => {
         if (window.confirm('Tem certeza que deseja excluir permanentemente este pedido do histórico?')) {
             try {
@@ -185,9 +205,14 @@ export default function Orders() {
 
                                         <td className="py-4 px-6">
                                             <div className="group relative">
-                                                <p className="text-sm text-white line-clamp-2 whitespace-pre-wrap">
-                                                    {order.status || 'S/ Detalhes'}
-                                                </p>
+                                                <div className="flex items-center gap-2">
+                                                    {order.enviado_logistica && (
+                                                        <Truck size={14} className="text-primary animate-pulse shrink-0" title="Enviado para Logística" />
+                                                    )}
+                                                    <p className={`text-sm line-clamp-2 whitespace-pre-wrap ${order.enviado_logistica ? 'text-primary/90 font-medium' : 'text-white'}`}>
+                                                        {order.status || 'S/ Detalhes'}
+                                                    </p>
+                                                </div>
                                                 {order.status && (
                                                     <button
                                                         onClick={() => copyToClipboard(order.status)}
@@ -207,39 +232,55 @@ export default function Orders() {
                                         </td>
 
                                         <td className="py-4 px-6">
-                                            {(() => {
-                                                let currentBadgeStatus = 'Novo Pedido';
-                                                const s = order.status || '';
-                                                if (s.startsWith('Pendente -')) currentBadgeStatus = 'Pendente';
-                                                else if (s.startsWith('Entregue -')) currentBadgeStatus = 'Entregue';
-                                                else if (s.startsWith('Cancelado -')) currentBadgeStatus = 'Cancelado';
-                                                else if (s.startsWith('Impresso -')) currentBadgeStatus = 'Impresso';
-                                                else if (s.startsWith('Finalizado -')) currentBadgeStatus = 'Finalizado';
-                                                else if (s.includes('Confirmado pelo cliente')) currentBadgeStatus = 'Novo Pedido';
-                                                else if (s.startsWith('Novo Pedido -')) currentBadgeStatus = 'Novo Pedido';
-                                                // Default to Novo Pedido if no known prefix is found
+                                            <div className="flex flex-col gap-2">
+                                                {(() => {
+                                                    let currentBadgeStatus = 'Novo Pedido';
+                                                    const s = order.status || '';
+                                                    if (s.startsWith('Pendente -')) currentBadgeStatus = 'Pendente';
+                                                    else if (s.startsWith('Entregue -')) currentBadgeStatus = 'Entregue';
+                                                    else if (s.startsWith('Cancelado -')) currentBadgeStatus = 'Cancelado';
+                                                    else if (s.startsWith('Impresso -')) currentBadgeStatus = 'Impresso';
+                                                    else if (s.startsWith('Finalizado -')) currentBadgeStatus = 'Finalizado';
+                                                    else if (s.includes('Confirmado pelo cliente')) currentBadgeStatus = 'Novo Pedido';
+                                                    else if (s.startsWith('Novo Pedido -')) currentBadgeStatus = 'Novo Pedido';
 
-                                                return (
-                                                    <select
-                                                        value={currentBadgeStatus}
-                                                        onChange={(e) => handleStatusChange(order.id, e.target.value, order.status)}
-                                                        className={`w-full text-sm font-semibold rounded-lg px-3 py-2 border outline-none transition-colors appearance-none cursor-pointer text-center
-                                                            ${currentBadgeStatus === 'Novo Pedido' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:border-amber-500/50' :
-                                                                currentBadgeStatus === 'Entregue' || currentBadgeStatus === 'Finalizado' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:border-emerald-500/50' :
-                                                                    currentBadgeStatus === 'Impresso' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20 hover:border-purple-500/50' :
-                                                                        currentBadgeStatus === 'Cancelado' ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:border-red-500/50' :
-                                                                            'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:border-blue-500/50'
-                                                            }`}
-                                                    >
-                                                        <option value="Novo Pedido" className="bg-dark-800 text-white">🟠 Novo Pedido</option>
-                                                        <option value="Pendente" className="bg-dark-800 text-white">🔵 Pendente</option>
-                                                        <option value="Impresso" className="bg-dark-800 text-white">🟣 Impresso</option>
-                                                        <option value="Entregue" className="bg-dark-800 text-white">🟢 Entregue</option>
-                                                        <option value="Finalizado" className="bg-dark-800 text-white">🏁 Finalizado</option>
-                                                        <option value="Cancelado" className="bg-dark-800 text-white">🔴 Cancelado</option>
-                                                    </select>
-                                                );
-                                            })()}
+                                                    return (
+                                                        <select
+                                                            value={currentBadgeStatus}
+                                                            onChange={(e) => handleStatusChange(order.id, e.target.value, order.status)}
+                                                            className={`w-full text-[11px] font-black rounded-lg px-2 py-1.5 border outline-none transition-all appearance-none cursor-pointer text-center uppercase tracking-tighter
+                                                                ${currentBadgeStatus === 'Novo Pedido' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                                                    currentBadgeStatus === 'Entregue' || currentBadgeStatus === 'Finalizado' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                                                        currentBadgeStatus === 'Impresso' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                                                            currentBadgeStatus === 'Cancelado' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                                                                'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                                                }`}
+                                                        >
+                                                            <option value="Novo Pedido">Novo Pedido</option>
+                                                            <option value="Pendente">Pendente</option>
+                                                            <option value="Impresso">Impresso</option>
+                                                            <option value="Entregue">Entregue</option>
+                                                            <option value="Finalizado">Finalizado</option>
+                                                            <option value="Cancelado">Cancelado</option>
+                                                        </select>
+                                                    );
+                                                })()}
+
+                                                <label className="flex items-center gap-2 cursor-pointer group/check">
+                                                    <div className="relative flex items-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={order.enviado_logistica || false}
+                                                            onChange={(e) => handleToggleLogistics(order.id, e.target.checked)}
+                                                            className="peer h-4 w-4 rounded border-dark-600 bg-dark-700 text-primary focus:ring-primary/20 appearance-none transition-all cursor-pointer border hover:border-primary/50"
+                                                        />
+                                                        <CheckCircle2 size={10} className="absolute left-0.5 top-0.5 text-dark-900 opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
+                                                    </div>
+                                                    <span className={`text-[10px] uppercase font-black tracking-widest transition-colors ${order.enviado_logistica ? 'text-primary' : 'text-neutral-500 group-hover/check:text-neutral-300'}`}>
+                                                        Logística
+                                                    </span>
+                                                </label>
+                                            </div>
                                         </td>
 
                                         <td className="py-4 px-6 text-right">
