@@ -1,60 +1,52 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../supabaseClient';
-import { LayoutDashboard, Package, ClipboardList, LogOut } from 'lucide-react';
+import { Package, ClipboardList, LogOut, Truck, LayoutDashboard } from 'lucide-react';
+import Orders from '../components/admin/Orders';
+import Logistics from '../components/admin/Logistics';
 
 export default function AdminPanel() {
-    console.log('[EMERGENCY] AdminPanel montado com sucesso.');
+    console.log('[REBUILD] AdminPanel: Carregando módulos estáveis.');
 
     const [session, setSession] = useState(null);
     const [activeTab, setActiveTab] = useState('orders');
-    const [orders, setOrders] = useState([]);
-    const [loading, setLoading] = useState(false);
 
-    // 1. Auth Simples
+    // 1. Auth Simples e Estável
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => setSession(session));
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            console.log('[EMERGENCY] Auth Change:', _event);
-            setSession(session);
+        let mounted = true;
+
+        supabase.auth.getSession().then(({ data: { session: s } }) => {
+            if (mounted) setSession(s);
         });
-        return () => subscription.unsubscribe();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+            if (mounted) {
+                console.log('[REBUILD] Auth Change:', _event);
+                setSession(s);
+            }
+        });
+
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
+        };
     }, []);
 
-    // 2. Busca de Pedidos (Apenas se logado)
-    useEffect(() => {
-        if (session) {
-            fetchOrders();
-        }
-    }, [session]);
-
-    const fetchOrders = async () => {
-        setLoading(true);
-        try {
-            console.log('[EMERGENCY] Buscando pedidos...');
-            const { data, error } = await supabase
-                .from('pedidos')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(20);
-
-            if (error) throw error;
-            setOrders(data || []);
-        } catch (error) {
-            console.error('[EMERGENCY] Erro ao buscar pedidos:', error.message);
-        } finally {
-            setLoading(false);
-        }
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
     };
 
     if (!session) {
         return (
             <div className="min-h-screen bg-dark-900 flex items-center justify-center p-4">
-                <div className="bg-dark-800 p-8 rounded-2xl border border-dark-700 text-center">
-                    <h1 className="text-xl font-bold text-white mb-4">Painel Restrito</h1>
-                    <p className="text-neutral-400 mb-6 text-sm">Por favor, acesse via login.</p>
+                <div className="bg-dark-800 p-10 rounded-3xl border border-dark-700 text-center shadow-2xl max-w-sm w-full animate-in zoom-in duration-300">
+                    <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Package className="text-primary" size={40} />
+                    </div>
+                    <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">Acesso Restrito</h1>
+                    <p className="text-neutral-400 mb-8 text-sm leading-relaxed">Este painel é exclusivo para administradores. Por favor, realize o login para continuar.</p>
                     <button
                         onClick={() => window.location.reload()}
-                        className="bg-primary px-6 py-2 rounded-xl text-dark-900 font-bold"
+                        className="w-full bg-primary hover:bg-primary-hover text-dark-900 font-black py-4 rounded-2xl transition-all transform active:scale-95 shadow-lg shadow-primary/20"
                     >
                         Tentar Novamente
                     </button>
@@ -63,80 +55,63 @@ export default function AdminPanel() {
         );
     }
 
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'orders': return <Orders />;
+            case 'logistics': return <Logistics />;
+            default: return <Orders />;
+        }
+    };
+
     return (
         <div className="min-h-screen bg-dark-900 text-neutral-200 flex flex-col md:flex-row">
-            <aside className="w-full md:w-64 bg-dark-800 border-r border-dark-700 flex flex-col sticky top-0 md:h-screen z-50">
-                <div className="h-16 flex items-center gap-3 px-6 border-b border-dark-700">
-                    <Package className="text-primary" />
-                    <span className="font-bold text-white uppercase tracking-widest text-sm">Hard Reset Mode</span>
+            {/* Sidebar Reconstruída */}
+            <aside className="w-full md:w-64 bg-dark-800 border-r border-dark-700 flex flex-col sticky top-0 md:h-screen z-50 shadow-xl">
+                <div className="h-20 flex items-center gap-4 px-6 border-b border-dark-700 bg-dark-900/40">
+                    <div className="p-2 bg-primary/20 rounded-lg">
+                        <Package className="text-primary" size={24} />
+                    </div>
+                    <div>
+                        <span className="font-black text-white uppercase tracking-tighter text-lg block leading-none">Admin</span>
+                        <span className="text-[10px] text-primary font-bold uppercase tracking-widest mt-1 block">Estabilidade Ativa</span>
+                    </div>
                 </div>
-                <nav className="flex-1 p-4 flex md:flex-col gap-2">
+
+                <nav className="flex-1 p-4 flex md:flex-col gap-2 overflow-y-auto no-scrollbar">
                     <button
                         onClick={() => setActiveTab('orders')}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm ${activeTab === 'orders' ? 'bg-primary text-dark-900' : 'text-neutral-400 hover:bg-dark-700'}`}
+                        className={`flex items-center gap-3 px-5 py-4 rounded-2xl font-black text-sm transition-all ${activeTab === 'orders' ? 'bg-primary text-dark-900 shadow-lg shadow-primary/20 scale-[1.02]' : 'text-neutral-400 hover:bg-dark-700 hover:text-white'}`}
                     >
-                        <ClipboardList size={18} /> Vendas
+                        <ClipboardList size={20} /> Vendas
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('logistics')}
+                        className={`flex items-center gap-3 px-5 py-4 rounded-2xl font-black text-sm transition-all ${activeTab === 'logistics' ? 'bg-primary text-dark-900 shadow-lg shadow-primary/20 scale-[1.02]' : 'text-neutral-400 hover:bg-dark-700 hover:text-white'}`}
+                    >
+                        <Truck size={20} /> Logística
                     </button>
                 </nav>
-                <div className="p-4 border-t border-dark-700">
+
+                <div className="p-4 border-t border-dark-700 bg-dark-900/20">
                     <button
-                        onClick={() => supabase.auth.signOut()}
-                        className="w-full p-3 bg-red-500/10 text-red-500 rounded-xl font-bold text-xs uppercase"
+                        onClick={handleLogout}
+                        className="w-full p-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                     >
                         <LogOut size={16} /> Sair
                     </button>
                     <button
                         onClick={() => window.location.href = '/'}
-                        className="w-full mt-2 p-3 bg-dark-700 text-white rounded-xl font-bold text-xs uppercase"
+                        className="w-full mt-3 p-4 bg-dark-700 hover:bg-dark-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2"
                     >
-                        Voltar Loja
+                        <LayoutDashboard size={16} /> Ver Catálogo
                     </button>
                 </div>
             </aside>
 
-            <main className="flex-1 p-6 md:p-10">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex justify-between items-center mb-8">
-                        <h1 className="text-2xl font-bold text-white uppercase tracking-tight">Lista de Vendas (Modo Seguro)</h1>
-                        <button
-                            onClick={fetchOrders}
-                            className="text-xs bg-dark-800 border border-dark-700 px-4 py-2 rounded-lg text-neutral-400 hover:text-white"
-                        >
-                            Atualizar Agora
-                        </button>
-                    </div>
-
-                    {loading ? (
-                        <div className="py-20 text-center text-neutral-500 font-bold uppercase tracking-widest animate-pulse">Carregando dados...</div>
-                    ) : (
-                        <div className="bg-dark-800 border border-dark-700 rounded-2xl overflow-hidden overflow-x-auto">
-                            <table className="w-full text-left">
-                                <thead className="bg-dark-900/50 border-b border-dark-700 text-[10px] font-black uppercase text-neutral-500 tracking-widest">
-                                    <tr>
-                                        <th className="p-4">ID</th>
-                                        <th className="p-4">Data</th>
-                                        <th className="p-4">Status / Detalhes</th>
-                                        <th className="p-4 text-right">Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-dark-700">
-                                    {orders.map(order => (
-                                        <tr key={order.id} className="hover:bg-dark-700/50 transition-colors">
-                                            <td className="p-4 text-sm text-neutral-600 font-mono">#{order.id}</td>
-                                            <td className="p-4 text-sm text-neutral-400">{new Date(order.created_at).toLocaleDateString('pt-BR')}</td>
-                                            <td className="p-4 text-sm text-white truncate max-w-md">{order.status}</td>
-                                            <td className="p-4 text-right font-bold text-emerald-400">R$ {order.valor_total?.toFixed(2)}</td>
-                                        </tr>
-                                    ))}
-                                    {orders.length === 0 && (
-                                        <tr>
-                                            <td colSpan="4" className="py-20 text-center text-neutral-600">Nenhum pedido recente.</td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
+            {/* Conteúdo Principal (O Coração) */}
+            <main className="flex-1 p-4 md:p-10 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-dark-800/50 via-dark-900 to-dark-900">
+                <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    {renderContent()}
                 </div>
             </main>
         </div>
