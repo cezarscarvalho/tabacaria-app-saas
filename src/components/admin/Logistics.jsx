@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { Truck, Send, CheckCircle2 } from 'lucide-react';
+import { Truck, Send, CheckCircle2, Package, AlertCircle } from 'lucide-react';
 import { formatarNumeroWhats } from '../../utils/whatsapp';
 
 export default function Logistics() {
@@ -46,37 +46,59 @@ export default function Logistics() {
         }
     };
 
+    const parseItem = (itemStr) => {
+        try {
+            const cleanStr = itemStr.trim();
+            if (!cleanStr) return null;
+
+            // Pattern 1: "Product Name (2x)" or "Product Name (2)"
+            const pattern1 = cleanStr.match(/(.+) \((\d+)[x| un]*\)/i);
+            if (pattern1) {
+                return { name: pattern1[1].trim(), qty: parseInt(pattern1[2]) };
+            }
+
+            // Pattern 2: "2x Product Name" or "2 Product Name"
+            const pattern2 = cleanStr.match(/^(\d+)[x| un]*\s+(.+)$/i);
+            if (pattern2) {
+                return { name: pattern2[2].trim(), qty: parseInt(pattern2[1]) };
+            }
+
+            return { name: cleanStr, qty: 1 };
+        } catch (e) {
+            return null;
+        }
+    };
+
     const consolidateOrders = (orderList) => {
         const itemMap = {};
 
         orderList.forEach(order => {
             try {
-                // Formato esperado: "... | Resp: Y - Item A (2x), Item B (1x)"
-                const parts = order.status.split(' - ');
+                const status = order.status || '';
+                const parts = status.split(' - ');
                 if (parts.length < 2) return;
 
-                const itemsStr = parts[1].split(', ');
-                itemsStr.forEach(itemStr => {
-                    const match = itemStr.match(/(.+) \((\d+)[x| un]*\)/i);
-                    if (match) {
-                        const name = match[1].trim();
-                        const qty = parseInt(match[2]);
-                        if (!isNaN(qty)) {
-                            itemMap[name] = (itemMap[name] || 0) + qty;
+                const itemsPart = parts[1];
+                const itemsArray = itemsPart.split(', ');
+
+                itemsArray.forEach(rawItem => {
+                    try {
+                        const parsed = parseItem(rawItem);
+                        if (parsed && parsed.name) {
+                            itemMap[parsed.name] = (itemMap[parsed.name] || 0) + parsed.qty;
                         }
-                    } else {
-                        const name = itemStr.trim();
-                        if (name) itemMap[name] = (itemMap[name] || 0) + 1;
+                    } catch (innerErr) {
+                        console.warn('Erro ao processar item específico:', rawItem, innerErr);
                     }
                 });
             } catch (err) {
-                console.warn('Pulo em pedido mal formatado:', order.id);
+                console.warn('Erro ao processar pedido no loop de consolidação:', order.id, err);
             }
         });
 
         const sortedList = Object.entries(itemMap)
             .map(([product, total]) => ({ product, total }))
-            .sort((a, b) => a.product.localeCompare(b.product));
+            .sort((a, b) => (a.product || '').localeCompare(b.product || ''));
 
         setConsolidatedItems(sortedList);
     };
@@ -102,13 +124,17 @@ export default function Logistics() {
 
             const whatsappUrl = `https://wa.me/${phone}?text=${text}`;
 
-            // Marcar pedidos como processados no Supabase
+            // Marcar pedidos como processados
             for (const order of orders) {
-                const newStatus = `${order.status} | Pedido ao Fornecedor Realizado`;
-                await supabase
-                    .from('pedidos')
-                    .update({ status: newStatus })
-                    .eq('id', order.id);
+                try {
+                    const newStatus = `${order.status} | Pedido ao Fornecedor Realizado`;
+                    await supabase
+                        .from('pedidos')
+                        .update({ status: newStatus })
+                        .eq('id', order.id);
+                } catch (updErr) {
+                    console.error('Erro ao atualizar status do pedido:', order.id, updErr);
+                }
             }
 
             window.open(whatsappUrl, '_blank');
@@ -121,42 +147,46 @@ export default function Logistics() {
 
         } catch (error) {
             console.error('Erro ao processar envio:', error);
-            alert('Erro ao atualizar pedidos no banco.');
+            alert('Erro ao processar envio ou atualizar banco.');
         } finally {
             setIsUpdating(false);
         }
     };
 
     return (
-        <div className="p-4 sm:p-6">
+        <div className="p-4 sm:p-6 min-h-[400px]">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-white flex items-center gap-3">
                         <Truck className="text-primary" size={28} /> Logística
                     </h1>
-                    <p className="text-neutral-500 text-sm mt-1">Consolidação simples de pedidos confirmados</p>
+                    <p className="text-neutral-500 text-sm mt-1 font-medium">Consolidação blindada de pedidos confirmados</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                    <select
-                        value={selectedSupplier}
-                        onChange={(e) => setSelectedSupplier(e.target.value)}
-                        className="bg-dark-800 border border-dark-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-primary transition-all cursor-pointer shadow-lg"
-                    >
-                        <option value="">Selecione o Fornecedor...</option>
-                        {suppliers.map(s => (
-                            <option key={s.id} value={s.id}>{s.nome} ({s.whatsapp || 'Sem Zap'})</option>
-                        ))}
-                    </select>
+                    {consolidatedItems.length > 0 && (
+                        <>
+                            <select
+                                value={selectedSupplier}
+                                onChange={(e) => setSelectedSupplier(e.target.value)}
+                                className="bg-dark-800 border border-dark-700 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-primary transition-all cursor-pointer shadow-lg"
+                            >
+                                <option value="">Escolha o Fornecedor...</option>
+                                {suppliers.map(s => (
+                                    <option key={s.id} value={s.id}>{s.nome} ({s.whatsapp || 's/ número'})</option>
+                                ))}
+                            </select>
 
-                    <button
-                        onClick={handleSendToSupplier}
-                        disabled={consolidatedItems.length === 0 || isUpdating}
-                        className="bg-primary hover:bg-primary-hover disabled:opacity-50 text-dark-900 font-bold px-6 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all shadow-lg shadow-primary/20"
-                    >
-                        <Send size={18} />
-                        {isUpdating ? 'Processando...' : 'Gerar Pedido de Compra'}
-                    </button>
+                            <button
+                                onClick={handleSendToSupplier}
+                                disabled={isUpdating}
+                                className="bg-primary hover:bg-primary-hover disabled:opacity-50 text-dark-900 font-bold px-6 py-2.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all shadow-lg shadow-primary/20"
+                            >
+                                <Send size={18} />
+                                {isUpdating ? 'Processando...' : 'Gerar Pedido de Compra'}
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -180,14 +210,17 @@ export default function Logistics() {
                             <tr>
                                 <td colSpan="2" className="py-20 text-center">
                                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-primary mx-auto mb-4"></div>
-                                    <p className="text-neutral-500 font-medium">Consolidando dados...</p>
+                                    <p className="text-neutral-500 font-medium tracking-wide">Processando estoque...</p>
                                 </td>
                             </tr>
                         ) : consolidatedItems.length === 0 ? (
                             <tr>
-                                <td colSpan="2" className="py-20 text-center">
-                                    <Package className="mx-auto text-dark-600 mb-4" size={48} />
-                                    <p className="text-neutral-500 font-medium text-lg">Nenhum pedido confirmado no momento.</p>
+                                <td colSpan="2" className="py-32 text-center">
+                                    <div className="bg-dark-900/50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border border-dark-700">
+                                        <AlertCircle className="text-neutral-600" size={40} />
+                                    </div>
+                                    <p className="text-neutral-400 font-bold text-xl mb-2">Nada por aqui!</p>
+                                    <p className="text-neutral-500 text-sm max-w-xs mx-auto">Nenhum pedido confirmado para consolidar hoje.</p>
                                 </td>
                             </tr>
                         ) : (
@@ -208,24 +241,26 @@ export default function Logistics() {
                 </table>
             </div>
 
-            <div className="mt-6 p-5 bg-dark-900/40 rounded-2xl border border-dark-700 flex flex-col sm:flex-row justify-between items-center gap-4">
-                <div className="flex items-center gap-4">
-                    <div className="p-3 bg-dark-800 rounded-xl border border-dark-700">
-                        <span className="block text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-1">Total Diferenciados</span>
-                        <span className="text-2xl font-black text-white">{consolidatedItems.length}</span>
+            {consolidatedItems.length > 0 && (
+                <div className="mt-6 p-5 bg-dark-900/40 rounded-2xl border border-dark-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-dark-800 rounded-xl border border-dark-700">
+                            <span className="block text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-1">Diferenciados</span>
+                            <span className="text-2xl font-black text-white">{consolidatedItems.length}</span>
+                        </div>
+                        <div className="p-3 bg-dark-800 rounded-xl border border-dark-700">
+                            <span className="block text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-1">Total Geral</span>
+                            <span className="text-2xl font-black text-primary">
+                                {consolidatedItems.reduce((acc, curr) => acc + curr.total, 0)}
+                            </span>
+                        </div>
                     </div>
-                    <div className="p-3 bg-dark-800 rounded-xl border border-dark-700">
-                        <span className="block text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-1">Total de Unidades</span>
-                        <span className="text-2xl font-black text-primary">
-                            {consolidatedItems.reduce((acc, curr) => acc + curr.total, 0)}
-                        </span>
-                    </div>
-                </div>
 
-                <p className="text-xs text-neutral-500 max-w-sm text-center sm:text-right font-medium leading-relaxed">
-                    Esta lista agrupa automaticamente todos os itens de pedidos com status "Confirmado" para facilitar a sua reposição semanal com fornecedores.
-                </p>
-            </div>
+                    <p className="text-xs text-neutral-500 max-w-xs text-center sm:text-right font-medium leading-relaxed bg-dark-800/50 p-3 rounded-xl border border-dark-700">
+                        Os dados foram processados com <b>Renderização Defensiva</b>. Formatos inconsistentes foram tratados automaticamente.
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
