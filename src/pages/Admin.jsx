@@ -22,6 +22,8 @@ export default function Admin() {
     const [unreadMessages, setUnreadMessages] = useState(0);
     const prevUnreadCount = useRef(0);
 
+    console.log("VERSÃO NOVA ADMIN 01-03-2026");
+
     // Audio Notification logic
     useEffect(() => {
         if (unreadMessages > prevUnreadCount.current) {
