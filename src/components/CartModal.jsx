@@ -92,11 +92,17 @@ export default function CartModal({ isOpen, onClose, cart, updateQuantity, remov
 
                                     <div className="flex items-center gap-4 mt-3">
                                         <div className="flex items-center bg-dark-800 rounded-xl border border-dark-600 p-1">
-                                            <button onClick={() => updateQuantity(item.id, item.quantidade - 1)} className="p-1 px-2 text-neutral-400 hover:text-white"><Minus size={14} /></button>
-                                            <span className="w-8 text-center text-sm font-black text-white">{item.quantidade}</span>
-                                            <button onClick={() => updateQuantity(item.id, item.quantidade + 1)} className="p-1 px-2 text-neutral-400 hover:text-white"><Plus size={14} /></button>
+                                            <button onClick={() => updateQuantity(item.id, item.quantidade - 1)} className="p-1 px-2 text-neutral-400 hover:text-white transition-colors"><Minus size={14} /></button>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                value={item.quantidade}
+                                                onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
+                                                className="w-10 bg-transparent text-center text-sm font-black text-white outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                            />
+                                            <button onClick={() => updateQuantity(item.id, item.quantidade + 1)} className="p-1 px-2 text-neutral-400 hover:text-white transition-colors"><Plus size={14} /></button>
                                         </div>
-                                        <button onClick={() => removeItem(item.id)} className="text-red-500/50 hover:text-red-500 transition-colors p-2 bg-red-500/5 rounded-lg"><Trash2 size={16} /></button>
+                                        <button onClick={() => removeItem(item.id)} className="text-red-500/50 hover:text-red-500 transition-colors p-2 bg-red-500/5 rounded-lg active:scale-95 transition-all"><Trash2 size={16} /></button>
                                     </div>
                                 </div>
                             </div>
