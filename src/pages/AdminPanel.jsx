@@ -195,23 +195,46 @@ export default function AdminPanel() {
         setLoading(false);
     };
 
+    // --- PARSER DE ITENS DO PEDIDO (Reusável) ---
+    const parseOrderItems = (statusStr) => {
+        const items = [];
+        const parts = (statusStr || '').split(' - ');
+        if (parts.length >= 2) {
+            parts[1].split(', ').forEach(raw => {
+                const match = raw.match(/(.+) \((\d+)[x| un]*\)/i) || raw.match(/^(\d+)[x| un]*\s+(.+)$/i);
+                if (match) {
+                    const name = (match[1].match(/^\d+/) ? match[2] : match[1]).trim();
+                    const qty = parseInt(match[1].match(/^\d+/) ? match[1] : match[2]) || 1;
+                    items.push({ name, qty });
+                }
+            });
+        }
+        return items;
+    };
+
+    // --- ALERTA DE RUPTURA POR PEDIDO (Aba Vendas) ---
+    const getOrderStockAlerts = (order) => {
+        const items = parseOrderItems(order.status);
+        const alerts = [];
+        items.forEach(item => {
+            const prod = products.find(p => p.nome.toLowerCase() === item.name.toLowerCase());
+            const stockQty = prod ? prod.quantidade : 0;
+            if (item.qty > stockQty) {
+                alerts.push({ name: item.name, falta: item.qty - stockQty });
+            }
+        });
+        return alerts;
+    };
+
     // --- LOGÍSTICA PREMIUM + INTELIGÊNCIA DE ESTOQUE ---
     const logisticsData = useMemo(() => {
         const itemMap = {};
         let totalVolume = 0;
         orders.filter(o => o.enviado_logistica).forEach(order => {
-            const parts = (order.status || '').split(' - ');
-            if (parts.length >= 2) {
-                parts[1].split(', ').forEach(raw => {
-                    const match = raw.match(/(.+) \((\d+)[x| un]*\)/i) || raw.match(/^(\d+)[x| un]*\s+(.+)$/i);
-                    if (match) {
-                        const name = (match[1].match(/^\d+/) ? match[2] : match[1]).trim();
-                        const qty = parseInt(match[1].match(/^\d+/) ? match[1] : match[2]) || 1;
-                        itemMap[name] = (itemMap[name] || 0) + qty;
-                        totalVolume += qty;
-                    }
-                });
-            }
+            parseOrderItems(order.status).forEach(item => {
+                itemMap[item.name] = (itemMap[item.name] || 0) + item.qty;
+                totalVolume += item.qty;
+            });
         });
 
         // Calcula Déficit (Inteligência de Reposição)
@@ -222,8 +245,16 @@ export default function AdminPanel() {
             return { id: `log-${idx}`, name, qty, stockQty, deficit };
         });
 
+        // Ordena: déficit maior primeiro
+        list.sort((a, b) => b.deficit - a.deficit);
+
         return { list, totalVolume };
     }, [orders, products]);
+
+    // --- ESTOQUE ORDENADO (Zero/Negativo no topo) ---
+    const sortedProducts = useMemo(() => {
+        return [...products].sort((a, b) => a.quantidade - b.quantidade);
+    }, [products]);
 
     const selectedVolume = logisticsData.list.filter(i => selectedLogIds.includes(i.id)).reduce((acc, curr) => acc + curr.qty, 0);
 
@@ -353,32 +384,46 @@ export default function AdminPanel() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-dark-700">
-                                            {orders.map(o => (
-                                                <tr key={o.id} className={`hover:bg-dark-700/30 transition-all ${o.enviado_logistica ? 'bg-primary/5' : ''}`}>
-                                                    <td className="p-8">
-                                                        <input type="checkbox" checked={o.enviado_logistica || false} onChange={() => toggleLogistics(o.id, o.enviado_logistica)} className="w-5 h-5 accent-primary cursor-pointer" />
-                                                    </td>
-                                                    <td className="p-8 text-white italic uppercase text-sm">{o.nome_cliente || 'Consumidor'}</td>
-                                                    <td className="p-8 text-neutral-400 text-[10px] italic leading-relaxed">{o.status}</td>
-                                                    <td className="p-8 text-center">
-                                                        <select value={o.situacao || 'Pendente'} onChange={(e) => updateOrderStatus(o.id, e.target.value)} className="bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-[9px] font-black uppercase text-primary outline-none focus:border-primary transition-all">
-                                                            <option value="Pendente">Pendente</option>
-                                                            <option value="Pago">Pago</option>
-                                                            <option value="Enviado">Enviado</option>
-                                                            <option value="Cancelado">Cancelado</option>
-                                                        </select>
-                                                    </td>
-                                                    <td className="p-8 text-right text-primary font-black italic text-xl">
-                                                        R$ {parseFloat(o.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                                    </td>
-                                                    <td className="p-8 text-center">
-                                                        <div className="flex items-center justify-center gap-2">
-                                                            <button onClick={() => handlePrint(o)} className="p-3 bg-dark-700 rounded-xl hover:text-primary transition-all shadow-lg text-neutral-400"><Printer size={14} /></button>
-                                                            <button onClick={() => handleDelete(o.id, 'pedidos')} className="p-3 bg-dark-700 rounded-xl hover:text-red-500 transition-all shadow-lg text-neutral-400"><Trash2 size={14} /></button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            {orders.map(o => {
+                                                const stockAlerts = getOrderStockAlerts(o);
+                                                return (
+                                                    <tr key={o.id} className={`hover:bg-dark-700/30 transition-all ${stockAlerts.length > 0 ? 'bg-red-500/5' : o.enviado_logistica ? 'bg-primary/5' : ''}`}>
+                                                        <td className="p-8">
+                                                            <input type="checkbox" checked={o.enviado_logistica || false} onChange={() => toggleLogistics(o.id, o.enviado_logistica)} className="w-5 h-5 accent-primary cursor-pointer" />
+                                                        </td>
+                                                        <td className="p-8 text-white italic uppercase text-sm">{o.nome_cliente || 'Consumidor'}</td>
+                                                        <td className="p-8">
+                                                            <div className="text-neutral-400 text-[10px] italic leading-relaxed">{o.status}</div>
+                                                            {stockAlerts.length > 0 && (
+                                                                <div className="mt-3 space-y-1">
+                                                                    {stockAlerts.map((a, i) => (
+                                                                        <div key={i} className="bg-red-500/10 border border-red-500/30 text-red-400 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase italic tracking-wide">
+                                                                            ⚠️ {a.name}: Faltam {a.falta} un
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td className="p-8 text-center">
+                                                            <select value={o.situacao || 'Pendente'} onChange={(e) => updateOrderStatus(o.id, e.target.value)} className="bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-[9px] font-black uppercase text-primary outline-none focus:border-primary transition-all">
+                                                                <option value="Pendente">Pendente</option>
+                                                                <option value="Pago">Pago</option>
+                                                                <option value="Enviado">Enviado</option>
+                                                                <option value="Cancelado">Cancelado</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="p-8 text-right text-primary font-black italic text-xl">
+                                                            R$ {parseFloat(o.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                        </td>
+                                                        <td className="p-8 text-center">
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <button onClick={() => handlePrint(o)} className="p-3 bg-dark-700 rounded-xl hover:text-primary transition-all shadow-lg text-neutral-400"><Printer size={14} /></button>
+                                                                <button onClick={() => handleDelete(o.id, 'pedidos')} className="p-3 bg-dark-700 rounded-xl hover:text-red-500 transition-all shadow-lg text-neutral-400"><Trash2 size={14} /></button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
@@ -435,9 +480,14 @@ export default function AdminPanel() {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-dark-700">
-                                            {products.map(p => (
-                                                <tr key={p.id} className="hover:bg-dark-700/30 transition-all">
-                                                    <td className="p-8 text-white italic uppercase text-lg">{p.nome}</td>
+                                            {sortedProducts.map(p => (
+                                                <tr key={p.id} className={`hover:bg-dark-700/30 transition-all ${p.quantidade <= 0 ? 'bg-red-500/5' : ''}`}>
+                                                    <td className="p-8">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-white italic uppercase text-lg">{p.nome}</span>
+                                                            {p.quantidade <= 0 && <span className="bg-red-500/20 text-red-500 text-[8px] px-2 py-1 rounded-lg font-black uppercase animate-pulse">RUPTURA</span>}
+                                                        </div>
+                                                    </td>
                                                     <td className="p-8 text-center">
                                                         <span className={`px-4 py-2 rounded-xl text-lg font-black ${p.quantidade <= 0 ? 'bg-red-500/20 text-red-500 animate-pulse' : 'bg-dark-900 text-primary'}`}>{p.quantidade} un</span>
                                                     </td>
