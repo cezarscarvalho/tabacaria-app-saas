@@ -227,6 +227,11 @@ export default function AdminPanel() {
         });
     };
 
+    const formatarMoeda = (valor) => {
+        const n = parseFloat(valor) || 0;
+        return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    };
+
     const tabs = [
         { id: 'vendas', label: 'Vendas', icon: <ClipboardList size={18} /> },
         { id: 'logistica', label: 'Logística', icon: <Truck size={18} /> },
@@ -340,7 +345,9 @@ export default function AdminPanel() {
                                                         </select>
                                                     </td>
                                                     <td className="p-8 text-center text-neutral-600 uppercase text-[9px] font-black">{new Date(o.created_at).toLocaleDateString()}</td>
-                                                    <td className="p-8 text-right text-primary font-black italic text-xl">R$ {o.total_venda?.toLocaleString('pt-BR') || o.total?.toLocaleString('pt-BR') || o.valor?.toLocaleString('pt-BR') || '0,00'}</td>
+                                                    <td className="p-8 text-right text-primary font-black italic text-xl">
+                                                        {formatarMoeda(o.valor || o.total_venda || o.total || 0)}
+                                                    </td>
                                                     <td className="p-8 text-center">
                                                         <div className="flex items-center justify-center gap-2">
                                                             <button
@@ -521,7 +528,7 @@ export default function AdminPanel() {
                         <p style={{ whiteSpace: 'pre-wrap', fontSize: '14px' }}>{printingOrder.status?.split('-')[1]?.trim()}</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                        <h3 style={{ fontSize: '16px', margin: '0' }}>TOTAL: R$ {printingOrder.total_venda?.toLocaleString('pt-BR') || printingOrder.total?.toLocaleString('pt-BR') || printingOrder.valor?.toLocaleString('pt-BR')}</h3>
+                        <h3 style={{ fontSize: '16px', margin: '0' }}>TOTAL: {formatarMoeda(printingOrder.valor || printingOrder.total_venda || printingOrder.total || 0)}</h3>
                     </div>
                     <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '10px' }}>
                         <p>Obrigado pela preferência!</p>
