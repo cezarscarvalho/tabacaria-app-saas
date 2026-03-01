@@ -384,11 +384,14 @@ export default function AdminPanel() {
                                 <h3 className="text-2xl font-black text-white italic uppercase mb-10">Inbox Suporte</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                     {messages.map(item => (
-                                        <div key={item.id} className="bg-dark-800 border-2 border-dark-700 p-8 rounded-[3rem] relative">
-                                            <div className="absolute top-8 right-8"><button onClick={() => handleDelete(item.id, 'mensagens')} className="p-3 bg-dark-700 rounded-xl hover:text-red-500 transition-all"><Trash2 size={14} /></button></div>
-                                            <div className="h-14 w-14 bg-dark-900 rounded-2xl flex items-center justify-center mb-6 text-primary"><MessageCircle size={24} /></div>
-                                            <h4 className="text-xl font-black text-white italic uppercase truncate mb-1">{item.nome}</h4>
-                                            <p className="text-white font-bold bg-dark-900/50 p-6 border border-dark-700 rounded-2xl italic leading-tight text-lg uppercase">"{item.conteudo}"</p>
+                                        <div key={item.id} className="bg-dark-800 border-2 border-dark-700 p-8 rounded-[3rem] relative group">
+                                            <div className="absolute top-8 right-8"><button onClick={() => handleDelete(item.id, 'mensagens')} className="p-3 bg-dark-700 rounded-xl hover:text-red-500 transition-all shadow-lg"><Trash2 size={14} /></button></div>
+                                            <div className="h-14 w-14 bg-dark-900 rounded-2xl flex items-center justify-center mb-6 text-primary border border-dark-700"><MessageCircle size={24} /></div>
+                                            <h4 className="text-xl font-black text-white italic uppercase truncate mb-1">{item.nome || 'Cliente Anônimo'}</h4>
+                                            <span className="text-[9px] font-black text-neutral-500 uppercase tracking-widest block mb-4">{item.whatsapp || 'Whats não informado'}</span>
+                                            <p className="text-white font-bold bg-dark-900/50 p-6 border border-dark-700 rounded-2xl italic leading-tight text-lg uppercase shadow-inner">
+                                                "{item.conteudo || item.mensagem || item.texto || 'Mensagem sem conteúdo'}"
+                                            </p>
                                         </div>
                                     ))}
                                 </div>
