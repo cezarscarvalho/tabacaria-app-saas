@@ -142,6 +142,12 @@ export default function AdminPanel() {
     };
 
     // --- GESTÃO DE FORNECEDORES (CRUD) ---
+    const handleEditSupplier = (sup) => {
+        setEditingSup(sup);
+        setSupForm({ nome: sup.nome, whatsapp: sup.whatsapp, marcas: sup.marcas || '' });
+        setShowSupModal(true);
+    };
+
     const handleSaveSupplier = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -450,7 +456,7 @@ export default function AdminPanel() {
                                     {suppliers.map(s => (
                                         <div key={s.id} className="bg-dark-800 border-2 border-dark-700 p-8 rounded-[3rem] hover:border-primary/20 transition-all group shadow-2xl relative overflow-hidden">
                                             <div className="absolute top-0 right-0 p-6 flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                                                <button onClick={() => { setEditingSup(s); setSupForm({ nome: s.nome, whatsapp: s.whatsapp, marcas: s.marcas || '' }); setShowSupModal(true); }} className="p-3 bg-dark-700 hover:bg-primary hover:text-dark-900 rounded-xl transition-all border border-dark-600"><Pencil size={14} /></button>
+                                                <button onClick={() => handleEditSupplier(s)} className="p-3 bg-dark-700 hover:bg-primary hover:text-dark-900 rounded-xl transition-all border border-dark-600"><Pencil size={14} /></button>
                                                 <button onClick={() => handleDeleteSupplier(s.id)} className="p-3 bg-dark-700 hover:bg-red-500 hover:text-white rounded-xl transition-all border border-dark-600"><Trash2 size={14} /></button>
                                             </div>
 
