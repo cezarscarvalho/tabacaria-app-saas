@@ -280,8 +280,8 @@ export default function Admin() {
                 </div>
 
                 {/* Mobile Menu (Horizontal scroll) / Desktop Menu (Vertical) */}
-                <div className="flex-1 overflow-x-auto md:overflow-y-auto no-scrollbar py-2 md:py-6 px-4">
-                    <nav className="flex md:flex-col gap-2 min-w-max md:min-w-0">
+                <div className="flex-1 py-2 md:py-6 px-4">
+                    <nav className="flex md:flex-col gap-2">
                         <button
                             onClick={() => setActiveTab('finance')}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm w-full text-left ${activeTab === 'finance' ? 'bg-primary border border-primary/20 text-dark-900 shadow-sm' : 'text-neutral-400 hover:bg-dark-700/50 hover:text-white'}`}
