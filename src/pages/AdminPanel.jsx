@@ -89,6 +89,21 @@ export default function AdminPanel() {
         }
     };
 
+    // --- STATUS DO PEDIDO ---
+    const updateOrderStatus = async (id, newStatus) => {
+        try {
+            const { error } = await supabase
+                .from('pedidos')
+                .update({ situacao: newStatus }) // Usamos 'situacao' para o progresso do pedido
+                .eq('id', id);
+
+            if (error) throw error;
+            fetchAllData();
+        } catch (err) {
+            alert('Erro ao atualizar status do pedido.');
+        }
+    };
+
     // --- LÓGICA DE SALVAMENTO ---
     const handleSave = async (e) => {
         if (e) e.preventDefault();
@@ -259,7 +274,15 @@ export default function AdminPanel() {
                                 <div className="bg-dark-800 border-2 border-dark-700 rounded-[2.5rem] overflow-hidden shadow-2xl">
                                     <table className="w-full text-left font-bold border-collapse">
                                         <thead className="bg-dark-900 text-neutral-500 uppercase text-[10px]">
-                                            <tr><th className="p-8">🛒 Log</th><th className="p-8">Cliente</th><th className="p-8">Detalhes</th><th className="p-8 text-center">Data</th><th className="p-8 text-right">Valor</th></tr>
+                                            <tr>
+                                                <th className="p-8">🛒 Log</th>
+                                                <th className="p-8">Cliente</th>
+                                                <th className="p-8">Detalhes</th>
+                                                <th className="p-8 text-center">Status</th>
+                                                <th className="p-8 text-center">Data</th>
+                                                <th className="p-8 text-right">Valor</th>
+                                                <th className="p-8 text-center">Ações</th>
+                                            </tr>
                                         </thead>
                                         <tbody className="divide-y divide-dark-700">
                                             {orders.map(o => (
@@ -274,8 +297,28 @@ export default function AdminPanel() {
                                                     </td>
                                                     <td className="p-8 text-white italic uppercase">{o.nome_cliente || 'Consumidor'}</td>
                                                     <td className="p-8 text-neutral-400 text-xs italic">{o.status}</td>
+                                                    <td className="p-8 text-center">
+                                                        <select
+                                                            value={o.situacao || 'Pendente'}
+                                                            onChange={(e) => updateOrderStatus(o.id, e.target.value)}
+                                                            className="bg-dark-900 border border-dark-600 rounded-lg px-3 py-1 text-[9px] font-black uppercase text-primary outline-none focus:border-primary transition-all"
+                                                        >
+                                                            <option value="Pendente">Pendente</option>
+                                                            <option value="Pago">Pago</option>
+                                                            <option value="Enviado">Enviado</option>
+                                                            <option value="Cancelado">Cancelado</option>
+                                                        </select>
+                                                    </td>
                                                     <td className="p-8 text-center text-neutral-600 uppercase text-[9px] font-black">{new Date(o.created_at).toLocaleDateString()}</td>
                                                     <td className="p-8 text-right text-primary font-black italic text-xl">R$ {o.total?.toLocaleString('pt-BR') || o.valor?.toLocaleString('pt-BR') || '0,00'}</td>
+                                                    <td className="p-8 text-center">
+                                                        <button
+                                                            onClick={() => handleDelete(o.id, 'pedidos')}
+                                                            className="p-3 bg-dark-700 rounded-xl hover:text-red-500 transition-all shadow-lg"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>
