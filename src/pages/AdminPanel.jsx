@@ -283,22 +283,32 @@ export default function AdminPanel() {
                                     </div>
                                 </div>
 
-                                {/* CONTADORES DINÂMICOS PREMIUM */}
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-                                    <div className="bg-gradient-to-r from-primary to-emerald-400 p-8 rounded-3xl shadow-xl shadow-primary/10 relative overflow-hidden group">
-                                        <Calculator size={100} className="absolute -right-4 -bottom-4 text-dark-900/10 group-hover:scale-110 transition-transform" />
-                                        <span className="text-dark-900/50 font-black uppercase text-[10px] tracking-widest block mb-1">Carga Geral</span>
-                                        <h2 className="text-4xl font-black text-dark-900 italic tracking-tighter">{logisticsData.totalVolume} <span className="text-[14px]">pacotes</span></h2>
+                                {/* CONTADOR PREMIUM CONSOLIDADO (LIGHT THEME) */}
+                                <div className="bg-white shadow-xl shadow-black/5 border border-neutral-200 p-8 rounded-[2.5rem] mb-10 flex flex-col md:flex-row justify-between items-center gap-8 animate-in fade-in zoom-in duration-500">
+                                    <div className="flex items-center gap-6">
+                                        <div className="bg-neutral-100 p-5 rounded-2xl border border-neutral-200 shadow-sm">
+                                            <PackageOpen size={32} className="text-neutral-600" />
+                                        </div>
+                                        <div>
+                                            <span className="text-neutral-400 font-black uppercase text-[10px] tracking-widest block mb-1">Volume Pendente</span>
+                                            <h2 className="text-4xl font-black text-neutral-800 italic tracking-tighter">
+                                                Volume Total: <span className="text-primary drop-shadow-sm">{logisticsData.totalVolume - selectedVolume}</span> <span className="text-[14px] text-neutral-500">pacotes</span>
+                                            </h2>
+                                        </div>
                                     </div>
-                                    <div className="bg-dark-800 border-2 border-primary/30 p-8 rounded-3xl shadow-2xl relative overflow-hidden group">
-                                        <Zap size={100} className="absolute -right-4 -bottom-4 text-primary/5 group-hover:scale-110 transition-transform" />
-                                        <span className="text-primary font-black uppercase text-[10px] tracking-widest block mb-1">Selecionado para Envio</span>
-                                        <h2 className="text-4xl font-black text-white italic tracking-tighter">{selectedVolume} <span className="text-primary text-[14px]">un</span></h2>
-                                    </div>
-                                    <div className="bg-dark-800 border-2 border-dark-700 p-8 rounded-3xl shadow-xl relative overflow-hidden group">
-                                        <PackageOpen size={100} className="absolute -right-4 -bottom-4 text-neutral-800/20 group-hover:scale-110 transition-transform" />
-                                        <span className="text-neutral-500 font-black uppercase text-[10px] tracking-widest block mb-1">Restante em Espera</span>
-                                        <h2 className="text-4xl font-black text-neutral-400 italic tracking-tighter">{logisticsData.totalVolume - selectedVolume} <span className="text-[14px]">un</span></h2>
+
+                                    <div className="h-16 w-px bg-neutral-200 hidden md:block opacity-50"></div>
+
+                                    <div className="flex items-center gap-6">
+                                        <div className="bg-primary/10 p-5 rounded-2xl border border-primary/20 shadow-sm">
+                                            <Zap size={32} className="text-primary fill-current" />
+                                        </div>
+                                        <div>
+                                            <span className="text-primary font-black uppercase text-[10px] tracking-widest block mb-1">Triagem Atual</span>
+                                            <h2 className="text-4xl font-black text-neutral-800 italic tracking-tighter">
+                                                Selecionados: <span className="text-neutral-900">{selectedVolume}</span> <span className="text-neutral-400 text-[14px]">itens</span>
+                                            </h2>
+                                        </div>
                                     </div>
                                 </div>
 
