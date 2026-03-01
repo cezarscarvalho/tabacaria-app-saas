@@ -1,5 +1,6 @@
 /* eslint-disable no-undef */
 /* eslint-disable react-hooks/exhaustive-deps */
+import AdminPanel from './pages/AdminPanel';
 import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../utils/supabaseClient';
 import {
