@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { supabase } from '../../utils/supabaseClient';
+import { supabase } from '././utils/supabaseClient';
 import Home from './pages/Home';
 import AdminPanel from './pages/AdminPanel';
 import { Flame, Mail, Lock, LogIn, RefreshCw, ShieldAlert, ArrowLeft, Send } from 'lucide-react';
