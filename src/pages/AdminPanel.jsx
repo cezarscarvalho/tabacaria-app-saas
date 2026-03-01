@@ -7,7 +7,7 @@ import {
     MessageCircle, TrendingUp, RefreshCw, Users, Settings as SettingsIcon,
     Bell, Clock, Search, Zap, PackageOpen, Calculator, AlertCircle,
     Send, Store, CheckCircle2, X, Plus, Pencil, Trash2, ChevronDown,
-    Printer, Inbox, ShieldAlert
+    Printer, Inbox, ShieldAlert, HelpCircle, BookOpen, Lightbulb
 } from 'lucide-react';
 
 export default function AdminPanel({ onLogout }) {
@@ -297,7 +297,8 @@ export default function AdminPanel({ onLogout }) {
         { id: 'mensagens', label: 'Suporte', icon: <MessageCircle size={18} />, badge: messages.filter(m => !m.lida).length },
         { id: 'clientes', label: 'Clientes', icon: <Users size={18} /> },
         { id: 'fornecedores', label: 'Fornecedores', icon: <Store size={18} /> },
-        { id: 'configuracoes', label: 'Configurações', icon: <SettingsIcon size={18} /> }
+        { id: 'configuracoes', label: 'Configurações', icon: <SettingsIcon size={18} /> },
+        { id: 'ajuda', label: 'Ajuda', icon: <HelpCircle size={18} /> }
     ];
 
     return (
@@ -670,6 +671,142 @@ export default function AdminPanel({ onLogout }) {
                                         {loading ? <RefreshCw className="animate-spin" size={20} /> : <AlertCircle size={20} />} ALTERAR CREDENCIAIS
                                     </button>
                                 </form>
+                            </div>
+                        )}
+
+                        {activeTab === 'ajuda' && (
+                            <div className="max-w-5xl mx-auto animate-in slide-in-from-bottom-4 duration-500 space-y-12">
+                                {/* Título */}
+                                <div className="text-center mb-4">
+                                    <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 border-2 border-primary/20 rounded-[2rem] mb-6">
+                                        <BookOpen size={36} className="text-primary" />
+                                    </div>
+                                    <h3 className="text-4xl font-black text-white italic uppercase tracking-tighter">Manual de <span className="text-primary">Operação</span></h3>
+                                    <p className="text-neutral-500 text-[10px] font-black uppercase tracking-[0.4em] mt-3 italic">Guia completo do sistema HubAdmin</p>
+                                </div>
+
+                                {/* ── MÓDULOS DO SISTEMA ── */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {/* Vendas */}
+                                    <div className="bg-dark-800 border-2 border-dark-700 rounded-[3rem] p-10 hover:border-primary/20 transition-all group">
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:bg-primary/20 transition-all"><ClipboardList className="text-primary" size={24} /></div>
+                                            <h4 className="text-2xl font-black text-white italic uppercase tracking-tighter">Vendas</h4>
+                                        </div>
+                                        <ul className="space-y-3 text-neutral-400 text-sm font-bold italic">
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> Todos os pedidos do catálogo aparecem automaticamente nesta aba.</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> Use o <span className="text-white">dropdown de Status</span> para marcar como Pendente, Pago, Enviado ou Cancelado.</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> O <span className="text-white">valor_total</span> é exibido em Reais (R$) ao lado de cada venda.</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> Use a <span className="text-white">checkbox</span> para enviar pedidos para a logística.</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> A <span className="text-white">lixeira</span> exclui o pedido do banco de dados.</li>
+                                            <li className="flex items-start gap-3"><AlertCircle size={14} className="text-red-400 mt-1 shrink-0" /> Itens com estoque insuficiente aparecem com <span className="text-red-400">alerta vermelho</span>.</li>
+                                        </ul>
+                                    </div>
+
+                                    {/* Estoque */}
+                                    <div className="bg-dark-800 border-2 border-dark-700 rounded-[3rem] p-10 hover:border-primary/20 transition-all group">
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:bg-primary/20 transition-all"><Inbox className="text-primary" size={24} /></div>
+                                            <h4 className="text-2xl font-black text-white italic uppercase tracking-tighter">Estoque</h4>
+                                        </div>
+                                        <ul className="space-y-3 text-neutral-400 text-sm font-bold italic">
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> Cadastre produtos com Nome, Preço de Compra e Preço de Venda.</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> A dedução de estoque é automática quando o pedido é marcado como <span className="text-white">Pago</span> ou <span className="text-white">Enviado</span>.</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> Produtos com <span className="text-red-400">saldo zero ou negativo</span> ficam no topo da lista com badge RUPTURA.</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> A venda <span className="text-white">nunca é bloqueada</span> por falta de estoque — apenas alertada.</li>
+                                        </ul>
+                                    </div>
+
+                                    {/* Logística */}
+                                    <div className="bg-dark-800 border-2 border-dark-700 rounded-[3rem] p-10 hover:border-primary/20 transition-all group">
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:bg-primary/20 transition-all"><Truck className="text-primary" size={24} /></div>
+                                            <h4 className="text-2xl font-black text-white italic uppercase tracking-tighter">Logística</h4>
+                                        </div>
+                                        <ul className="space-y-3 text-neutral-400 text-sm font-bold italic">
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> Marque pedidos com a checkbox "Enviar para Logística" na aba Vendas.</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> O sistema calcula automaticamente o <span className="text-white">déficit de reposição</span> (pedido − estoque).</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> Selecione um fornecedor e clique <span className="text-white">Despachar Pedido</span> para enviar via WhatsApp.</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> Itens com déficit são ordenados primeiro e marcados com <span className="text-red-400">Comprar X</span>.</li>
+                                        </ul>
+                                    </div>
+
+                                    {/* Prospecção */}
+                                    <div className="bg-dark-800 border-2 border-dark-700 rounded-[3rem] p-10 hover:border-primary/20 transition-all group">
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:bg-primary/20 transition-all"><Send className="text-primary" size={24} /></div>
+                                            <h4 className="text-2xl font-black text-white italic uppercase tracking-tighter">Prospecção</h4>
+                                        </div>
+                                        <ul className="space-y-3 text-neutral-400 text-sm font-bold italic">
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> Na aba Clientes, selecione um ou mais clientes para envio em massa do catálogo.</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> O link do catálogo é enviado automaticamente via WhatsApp (configurável em Configurações).</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> Configure o <span className="text-white">Dia</span> e <span className="text-white">Horário</span> de prospecção na aba Configurações.</li>
+                                        </ul>
+                                    </div>
+
+                                    {/* Impressão Térmica */}
+                                    <div className="bg-dark-800 border-2 border-dark-700 rounded-[3rem] p-10 hover:border-primary/20 transition-all group">
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:bg-primary/20 transition-all"><Printer className="text-primary" size={24} /></div>
+                                            <h4 className="text-2xl font-black text-white italic uppercase tracking-tighter">Impressão</h4>
+                                        </div>
+                                        <ul className="space-y-3 text-neutral-400 text-sm font-bold italic">
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> Clique no ícone da <span className="text-white">impressora</span> ao lado de cada venda.</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> O recibo é otimizado para bobinas de <span className="text-white">80mm</span> (térmica).</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> O layout esconde todos os menus e mostra apenas o recibo formatado.</li>
+                                        </ul>
+                                    </div>
+
+                                    {/* Configurações & Segurança */}
+                                    <div className="bg-dark-800 border-2 border-dark-700 rounded-[3rem] p-10 hover:border-primary/20 transition-all group">
+                                        <div className="flex items-center gap-4 mb-6">
+                                            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center group-hover:bg-primary/20 transition-all"><SettingsIcon className="text-primary" size={24} /></div>
+                                            <h4 className="text-2xl font-black text-white italic uppercase tracking-tighter">Segurança</h4>
+                                        </div>
+                                        <ul className="space-y-3 text-neutral-400 text-sm font-bold italic">
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> A aba Configurações permite alterar WhatsApp, Link do Catálogo e Automação.</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> Para alterar credenciais, confirme o <span className="text-white">e-mail atual</span> antes.</li>
+                                            <li className="flex items-start gap-3"><CheckCircle2 size={14} className="text-primary mt-1 shrink-0" /> O login expira em <span className="text-white">24 horas</span>. Use "Sair do Hub" para encerrar a sessão.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                {/* ── RESOLUÇÃO DE PROBLEMAS ── */}
+                                <div className="bg-dark-800 border-2 border-red-500/10 rounded-[3rem] p-12 mt-4">
+                                    <div className="flex items-center gap-4 mb-10">
+                                        <div className="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center"><Lightbulb className="text-red-400" size={24} /></div>
+                                        <div>
+                                            <h4 className="text-2xl font-black text-white italic uppercase tracking-tighter">Resolução de Problemas</h4>
+                                            <p className="text-neutral-500 text-[10px] font-black uppercase tracking-[0.3em] italic">Dicas rápidas para situações comuns</p>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div className="bg-dark-900 border border-dark-700 rounded-2xl p-8">
+                                            <h5 className="text-primary font-black text-sm uppercase italic mb-3">💰 Valor da venda aparece zerado?</h5>
+                                            <p className="text-neutral-400 text-sm font-bold italic leading-relaxed">Verifique se o campo <span className="text-white">valor_total</span> está preenchido no banco de dados. O sistema busca especificamente esse campo.</p>
+                                        </div>
+                                        <div className="bg-dark-900 border border-dark-700 rounded-2xl p-8">
+                                            <h5 className="text-primary font-black text-sm uppercase italic mb-3">🛒 Carrinho não limpa após a compra?</h5>
+                                            <p className="text-neutral-400 text-sm font-bold italic leading-relaxed">O carrinho é limpo automaticamente após o envio. Se não limpar, recarregue a página do catálogo.</p>
+                                        </div>
+                                        <div className="bg-dark-900 border border-dark-700 rounded-2xl p-8">
+                                            <h5 className="text-primary font-black text-sm uppercase italic mb-3">🖨️ Impressão sai em branco?</h5>
+                                            <p className="text-neutral-400 text-sm font-bold italic leading-relaxed">Certifique-se de que a impressora está configurada para <span className="text-white">80mm</span>. Desative margens nas configurações de impressão do navegador.</p>
+                                        </div>
+                                        <div className="bg-dark-900 border border-dark-700 rounded-2xl p-8">
+                                            <h5 className="text-primary font-black text-sm uppercase italic mb-3">📦 Estoque não deduz automaticamente?</h5>
+                                            <p className="text-neutral-400 text-sm font-bold italic leading-relaxed">A dedução só ocorre quando o status muda para <span className="text-white">Pago</span> ou <span className="text-white">Enviado</span> pela primeira vez.</p>
+                                        </div>
+                                        <div className="bg-dark-900 border border-dark-700 rounded-2xl p-8">
+                                            <h5 className="text-primary font-black text-sm uppercase italic mb-3">🔑 Esqueci as credenciais do Admin?</h5>
+                                            <p className="text-neutral-400 text-sm font-bold italic leading-relaxed">Use o link <span className="text-white">"Esqueci minha senha"</span> na tela de login. O sistema envia um link de recuperação por e-mail.</p>
+                                        </div>
+                                        <div className="bg-dark-900 border border-dark-700 rounded-2xl p-8">
+                                            <h5 className="text-primary font-black text-sm uppercase italic mb-3">📲 WhatsApp não abre?</h5>
+                                            <p className="text-neutral-400 text-sm font-bold italic leading-relaxed">Verifique se o número do cliente/fornecedor está no formato <span className="text-white">55XXXXXXXXXXX</span> (DDI + DDD + Número) sem espaços.</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
