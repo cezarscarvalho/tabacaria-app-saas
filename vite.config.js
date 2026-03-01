@@ -1,7 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // Remova qualquer linha que tenha "root: 'utils'" ou algo parecido aqui!
-})s
+  build: {
+    outDir: 'dist',
+  },
+  server: {
+    historyApiFallback: true,
+  }
+})
