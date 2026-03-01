@@ -232,6 +232,8 @@ export default function Admin() {
     );
 
     const renderContent = () => {
+        console.log("Aba ativa:", activeTab); // 👈 adiciona isso
+
         try {
             switch (activeTab) {
                 case 'finance':
