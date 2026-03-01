@@ -119,6 +119,15 @@ export default function AdminPanel() {
         window.open(`https://wa.me/${msg.whatsapp?.replace(/\D/g, '')}?text=${text}`, '_blank');
     };
 
+    // 2. Mapeamento de Menu (Abas Ativas)
+    const tabs = [
+        { id: 'vendas', label: 'Vendas', icon: <ClipboardList size={18} /> },
+        { id: 'logistica', label: 'Logística/Fornecedores', icon: <Truck size={18} /> },
+        { id: 'mensagens', label: 'Suporte', icon: <MessageCircle size={18} />, badge: messages.filter(m => !m.lida).length },
+        { id: 'clientes', label: 'Clientes', icon: <Users size={18} /> },
+        { id: 'configuracoes', label: 'Configurações', icon: <SettingsIcon size={18} /> }
+    ];
+
     if (!session) return (
         <div className="min-h-screen bg-black flex items-center justify-center p-8">
             <div className="text-center animate-pulse">
@@ -138,12 +147,17 @@ export default function AdminPanel() {
                 </div>
 
                 <nav className="flex-1 p-6 flex flex-col gap-2 overflow-y-auto no-scrollbar">
-                    <TabBtn active={activeTab === 'vendas'} icon={<ClipboardList size={18} />} label="Vendas" onClick={() => setActiveTab('vendas')} />
-                    <TabBtn active={activeTab === 'logistica'} icon={<Truck size={18} />} label="Logística" onClick={() => setActiveTab('logistica')} />
-                    <TabBtn active={activeTab === 'mensagens'} icon={<MessageCircle size={18} />} label="Suporte" onClick={() => setActiveTab('mensagens')} badge={messages.filter(m => !m.lida).length} />
-                    <TabBtn active={activeTab === 'clientes'} icon={<Users size={18} />} label="Clientes" onClick={() => setActiveTab('clientes')} />
+                    {tabs.map(tab => (
+                        <TabBtn
+                            key={tab.id}
+                            active={activeTab === tab.id}
+                            icon={tab.icon}
+                            label={tab.label}
+                            onClick={() => setActiveTab(tab.id)}
+                            badge={tab.badge}
+                        />
+                    ))}
                     <div className="h-px bg-dark-700 my-4 mx-2 opacity-50"></div>
-                    <TabBtn active={activeTab === 'configuracoes'} icon={<SettingsIcon size={18} />} label="Configurações" onClick={() => setActiveTab('configuracoes')} />
                 </nav>
 
                 <div className="p-6 bg-dark-900/20 border-t border-dark-700">
