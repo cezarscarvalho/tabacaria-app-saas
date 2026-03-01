@@ -346,7 +346,7 @@ export default function AdminPanel() {
                                                     </td>
                                                     <td className="p-8 text-center text-neutral-600 uppercase text-[9px] font-black">{new Date(o.created_at).toLocaleDateString()}</td>
                                                     <td className="p-8 text-right text-primary font-black italic text-xl">
-                                                        {formatarMoeda(o.valor || o.total_venda || o.total || 0)}
+                                                        R$ {parseFloat(o.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                                     </td>
                                                     <td className="p-8 text-center">
                                                         <div className="flex items-center justify-center gap-2">
@@ -528,7 +528,7 @@ export default function AdminPanel() {
                         <p style={{ whiteSpace: 'pre-wrap', fontSize: '14px' }}>{printingOrder.status?.split('-')[1]?.trim()}</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                        <h3 style={{ fontSize: '16px', margin: '0' }}>TOTAL: {formatarMoeda(printingOrder.valor || printingOrder.total_venda || printingOrder.total || 0)}</h3>
+                        <h3 style={{ fontSize: '16px', margin: '0' }}>TOTAL: R$ {parseFloat(printingOrder.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h3>
                     </div>
                     <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '10px' }}>
                         <p>Obrigado pela preferência!</p>
