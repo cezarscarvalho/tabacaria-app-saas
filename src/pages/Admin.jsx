@@ -273,7 +273,7 @@ export default function Admin() {
     return (
         <div className="min-h-screen bg-dark-900 text-neutral-200 flex flex-col md:flex-row">
             {/* Sidebar Navigation */}
-            <aside className="w-full md:w-64 bg-dark-800 border-b md:border-b-0 md:border-r border-dark-700 flex-shrink-0 flex flex-col sticky top-0 md:h-screen z-40">
+            <aside className="w-full md:w-64 bg-dark-800 border-b md:border-b-0 md:border-r border-dark-700 flex-shrink-0 flex flex-col">
                 <div className="h-16 flex items-center gap-3 px-6 border-b border-dark-700 flex-shrink-0">
                     <Package className="text-primary" />
                     <span className="font-bold text-xl text-white">Painel Base</span>
