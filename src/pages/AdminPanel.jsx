@@ -307,10 +307,10 @@ export default function AdminPanel() {
                                             <tr>
                                                 <th className="p-8">🛒 Log</th>
                                                 <th className="p-8">Cliente</th>
-                                                <th className="p-8">Detalhes</th>
+                                                <th className="p-8">Itens</th>
                                                 <th className="p-8 text-center">Status</th>
                                                 <th className="p-8 text-center">Data</th>
-                                                <th className="p-8 text-right">Valor</th>
+                                                <th className="p-8 text-right">VALOR TOTAL (R$)</th>
                                                 <th className="p-8 text-center">Ações</th>
                                             </tr>
                                         </thead>
@@ -340,7 +340,7 @@ export default function AdminPanel() {
                                                         </select>
                                                     </td>
                                                     <td className="p-8 text-center text-neutral-600 uppercase text-[9px] font-black">{new Date(o.created_at).toLocaleDateString()}</td>
-                                                    <td className="p-8 text-right text-primary font-black italic text-xl">R$ {o.total?.toLocaleString('pt-BR') || o.valor?.toLocaleString('pt-BR') || '0,00'}</td>
+                                                    <td className="p-8 text-right text-primary font-black italic text-xl">R$ {o.total_venda?.toLocaleString('pt-BR') || o.total?.toLocaleString('pt-BR') || o.valor?.toLocaleString('pt-BR') || '0,00'}</td>
                                                     <td className="p-8 text-center">
                                                         <div className="flex items-center justify-center gap-2">
                                                             <button
@@ -521,7 +521,7 @@ export default function AdminPanel() {
                         <p style={{ whiteSpace: 'pre-wrap', fontSize: '14px' }}>{printingOrder.status?.split('-')[1]?.trim()}</p>
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                        <h3 style={{ fontSize: '16px', margin: '0' }}>TOTAL: R$ {printingOrder.total?.toLocaleString('pt-BR') || printingOrder.valor?.toLocaleString('pt-BR')}</h3>
+                        <h3 style={{ fontSize: '16px', margin: '0' }}>TOTAL: R$ {printingOrder.total_venda?.toLocaleString('pt-BR') || printingOrder.total?.toLocaleString('pt-BR') || printingOrder.valor?.toLocaleString('pt-BR')}</h3>
                     </div>
                     <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '10px' }}>
                         <p>Obrigado pela preferência!</p>
