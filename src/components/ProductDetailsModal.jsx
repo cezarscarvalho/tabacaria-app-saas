@@ -38,15 +38,13 @@ export default function ProductDetailsModal({ isOpen, onClose, product, addToCar
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-neutral-600 font-black uppercase tracking-widest italic">Sem Foto</div>
                     )}
-                    <div className="absolute bottom-6 left-6 bg-primary/20 backdrop-blur-md border border-primary/30 text-primary px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest italic">
-                        {product.embalagem || 'Unidade'}
-                    </div>
                 </div>
 
                 {/* Informações e Compra */}
                 <div className="flex-1 p-8 md:p-12 flex flex-col">
                     <div className="mb-auto">
-                        <h2 className="text-3xl md:text-4xl font-black text-white italic uppercase leading-none mb-4 tracking-tighter">{product.nome}</h2>
+                        <h2 className="text-3xl md:text-4xl font-black text-white italic uppercase leading-none mb-2 tracking-tighter">{product.nome}</h2>
+                        {product.embalagem && <span className="text-[10px] text-neutral-500 font-black uppercase tracking-[0.3em] italic block mb-4">{product.embalagem}</span>}
                         <p className="text-primary text-3xl font-black italic mb-8">{formatPrice(product.preco_venda)}</p>
 
                         <div className="space-y-4 mb-10">
