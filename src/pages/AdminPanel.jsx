@@ -302,9 +302,9 @@ export default function AdminPanel({ onLogout }) {
         { id: 'ajuda', label: 'Ajuda', icon: <HelpCircle size={18} /> }
     ];
 
-    return (
-        <div className="min-h-screen bg-[#0a0a0a] text-neutral-200 flex flex-col md:flex-row h-screen overflow-hidden font-sans relative">
 
+    return (
+        <div className="min-h-screen bg-[#0a0a0a] text-neutral-200 flex flex-col md:flex-row font-sans relative">
             {/* CSS DE IMPRESSÃO TÉRMICA */}
             <style>
                 {`
