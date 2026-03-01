@@ -10,8 +10,7 @@ import {
     Printer, Inbox, ShieldAlert
 } from 'lucide-react';
 
-export default function AdminPanel() {
-    const [session, setSession] = useState(null);
+export default function AdminPanel({ onLogout }) {
     const [activeTab, setActiveTab] = useState('vendas');
     const [loading, setLoading] = useState(false);
     const [lastSync, setLastSync] = useState('--:--:--');
@@ -42,21 +41,9 @@ export default function AdminPanel() {
         quantidade: '', preco_compra: '', preco_venda: ''
     });
 
-    // 1. SEGURANÇA E CONEXÃO
     useEffect(() => {
-        let mounted = true;
-        supabase.auth.getSession().then(({ data: { session: s } }) => {
-            if (mounted) setSession(s);
-        });
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
-            if (mounted) setSession(s);
-        });
-        return () => { mounted = false; subscription.unsubscribe(); };
+        fetchAllData();
     }, []);
-
-    useEffect(() => {
-        if (session) fetchAllData();
-    }, [session]);
 
     const fetchAllData = async () => {
         if (loading) return;
@@ -313,80 +300,6 @@ export default function AdminPanel() {
         { id: 'configuracoes', label: 'Configurações', icon: <SettingsIcon size={18} /> }
     ];
 
-    // --- LOGIN FORM (Proteção da Rota /admin) ---
-    const [loginEmail, setLoginEmail] = useState('');
-    const [loginPassword, setLoginPassword] = useState('');
-    const [loginError, setLoginError] = useState('');
-    const [loginLoading, setLoginLoading] = useState(false);
-
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        setLoginError('');
-        setLoginLoading(true);
-        try {
-            const { error } = await supabase.auth.signInWithPassword({
-                email: loginEmail,
-                password: loginPassword
-            });
-            if (error) throw error;
-        } catch (err) {
-            setLoginError(err.message || 'Credenciais inválidas.');
-        }
-        setLoginLoading(false);
-    };
-
-    if (!session) return (
-        <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6 font-sans">
-            <div className="w-full max-w-md animate-in zoom-in-95 duration-500">
-                <div className="text-center mb-12">
-                    <div className="inline-flex items-center gap-3 text-primary mb-6">
-                        <Package size={40} className="animate-pulse" />
-                    </div>
-                    <h1 className="text-4xl font-black text-white uppercase tracking-tighter italic">HUB<span className="text-primary">ADMIN</span></h1>
-                    <p className="text-neutral-500 text-[10px] font-black uppercase tracking-[0.4em] mt-3 italic">Acesso Restrito • Painel de Controle</p>
-                </div>
-                <form onSubmit={handleLogin} className="bg-dark-800 border-2 border-dark-700 rounded-[3rem] p-12 shadow-3xl space-y-8 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] pointer-events-none"></div>
-                    {loginError && (
-                        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-6 py-4 rounded-2xl text-xs font-black uppercase italic text-center animate-in fade-in">
-                            {loginError}
-                        </div>
-                    )}
-                    <div className="relative z-10">
-                        <label className="text-primary uppercase text-[10px] font-black mb-3 block italic tracking-[0.3em]">E-mail</label>
-                        <input
-                            type="email"
-                            required
-                            value={loginEmail}
-                            onChange={e => setLoginEmail(e.target.value)}
-                            placeholder="admin@tabacaria.com"
-                            className="w-full bg-dark-900 border-2 border-dark-700 rounded-2xl p-6 text-white font-bold outline-none focus:border-primary transition-all shadow-inner"
-                        />
-                    </div>
-                    <div className="relative z-10">
-                        <label className="text-primary uppercase text-[10px] font-black mb-3 block italic tracking-[0.3em]">Senha</label>
-                        <input
-                            type="password"
-                            required
-                            value={loginPassword}
-                            onChange={e => setLoginPassword(e.target.value)}
-                            placeholder="••••••••"
-                            className="w-full bg-dark-900 border-2 border-dark-700 rounded-2xl p-6 text-white font-bold outline-none focus:border-primary transition-all shadow-inner"
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={loginLoading}
-                        className="relative z-10 w-full bg-primary hover:bg-primary-hover text-dark-900 font-black py-7 rounded-[2rem] uppercase tracking-[0.4em] shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 text-sm flex items-center justify-center gap-4"
-                    >
-                        {loginLoading ? <RefreshCw className="animate-spin" size={20} /> : <CheckCircle2 size={20} />}
-                        {loginLoading ? 'AUTENTICANDO...' : 'ENTRAR NO HUB'}
-                    </button>
-                </form>
-            </div>
-        </div>
-    );
-
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-neutral-200 flex flex-col md:flex-row h-screen overflow-hidden font-sans relative">
 
@@ -423,6 +336,13 @@ export default function AdminPanel() {
                         </button>
                     ))}
                 </nav>
+                {onLogout && (
+                    <div className="p-6 border-t border-dark-700">
+                        <button onClick={onLogout} className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-2xl font-black text-[11px] uppercase tracking-widest text-red-400 hover:bg-red-500/10 transition-all">
+                            <LogOut size={16} /> Sair do Hub
+                        </button>
+                    </div>
+                )}
             </aside>
 
             {/* Painel Principal */}
