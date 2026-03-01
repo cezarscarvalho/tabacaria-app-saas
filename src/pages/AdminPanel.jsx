@@ -6,7 +6,8 @@ import {
     Package, ClipboardList, LogOut, Truck, LayoutDashboard,
     MessageCircle, TrendingUp, RefreshCw, Users, Settings as SettingsIcon,
     Bell, Clock, Search, Zap, PackageOpen, Calculator, AlertCircle,
-    Send, Store, CheckCircle2, X, Plus, Pencil, Trash2, ChevronDown
+    Send, Store, CheckCircle2, X, Plus, Pencil, Trash2, ChevronDown,
+    Printer
 } from 'lucide-react';
 
 export default function AdminPanel() {
@@ -27,10 +28,10 @@ export default function AdminPanel() {
     });
 
     // Filtros e Seleções
-    const [logSearch, setLogSearch] = useState('');
     const [selectedLogIds, setSelectedLogIds] = useState([]);
     const [selectedSupplierId, setSelectedSupplierId] = useState('');
     const [selectedClientIds, setSelectedClientIds] = useState([]);
+    const [printingOrder, setPrintingOrder] = useState(null);
 
     // Estados de Modais e Edição Unificada
     const [showModal, setShowModal] = useState(false);
@@ -94,7 +95,7 @@ export default function AdminPanel() {
         try {
             const { error } = await supabase
                 .from('pedidos')
-                .update({ situacao: newStatus }) // Usamos 'situacao' para o progresso do pedido
+                .update({ situacao: newStatus })
                 .eq('id', id);
 
             if (error) throw error;
@@ -102,6 +103,15 @@ export default function AdminPanel() {
         } catch (err) {
             alert('Erro ao atualizar status do pedido.');
         }
+    };
+
+    // --- IMPRESSÃO TÉRMICA ---
+    const handlePrint = (order) => {
+        setPrintingOrder(order);
+        setTimeout(() => {
+            window.print();
+            setPrintingOrder(null);
+        }, 300);
     };
 
     // --- LÓGICA DE SALVAMENTO ---
@@ -230,6 +240,26 @@ export default function AdminPanel() {
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-neutral-200 flex flex-col md:flex-row h-screen overflow-hidden font-sans">
+
+            {/* CSS DE IMPRESSÃO TÉRMICA */}
+            <style>
+                {`
+                    @media print {
+                        body * { visibility: hidden; background: white !important; color: black !important; }
+                        #printable-receipt, #printable-receipt * { visibility: visible; }
+                        #printable-receipt {
+                            position: absolute; left: 0; top: 0;
+                            width: 80mm;
+                            padding: 5mm;
+                            font-family: 'Courier New', Courier, monospace;
+                            font-size: 12px;
+                            line-height: 1.2;
+                        }
+                        aside, header, nav, button, select, input, .no-print { display: none !important; }
+                    }
+                `}
+            </style>
+
             {/* Nav Lateral */}
             <aside className="w-full md:w-72 bg-dark-800 border-r border-dark-700 flex flex-col h-full z-50">
                 <div className="h-24 px-8 flex items-center gap-4 bg-dark-900/40 border-b border-dark-700 select-none">
@@ -312,12 +342,22 @@ export default function AdminPanel() {
                                                     <td className="p-8 text-center text-neutral-600 uppercase text-[9px] font-black">{new Date(o.created_at).toLocaleDateString()}</td>
                                                     <td className="p-8 text-right text-primary font-black italic text-xl">R$ {o.total?.toLocaleString('pt-BR') || o.valor?.toLocaleString('pt-BR') || '0,00'}</td>
                                                     <td className="p-8 text-center">
-                                                        <button
-                                                            onClick={() => handleDelete(o.id, 'pedidos')}
-                                                            className="p-3 bg-dark-700 rounded-xl hover:text-red-500 transition-all shadow-lg"
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </button>
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <button
+                                                                onClick={() => handlePrint(o)}
+                                                                className="p-3 bg-dark-700 rounded-xl hover:text-primary transition-all shadow-lg text-neutral-400"
+                                                                title="Imprimir Recibo"
+                                                            >
+                                                                <Printer size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDelete(o.id, 'pedidos')}
+                                                                className="p-3 bg-dark-700 rounded-xl hover:text-red-500 transition-all shadow-lg text-neutral-400"
+                                                                title="Excluir Pedido"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -464,6 +504,30 @@ export default function AdminPanel() {
                     </div>
                 </div>
             </main>
+
+            {/* RECIBO PARA IMPRESSÃO (INVISÍVEL NA TELA) */}
+            {printingOrder && (
+                <div id="printable-receipt" className="hidden">
+                    <div style={{ textAlign: 'center', marginBottom: '10px', borderBottom: '1px dashed black', paddingBottom: '10px' }}>
+                        <h2 style={{ fontSize: '18px', margin: '0' }}>TABACARIA HUB</h2>
+                        <p style={{ margin: '5px 0' }}>RECIBO DE PEDIDO</p>
+                    </div>
+                    <div style={{ marginBottom: '10px' }}>
+                        <p><strong>DATA:</strong> {new Date(printingOrder.created_at).toLocaleString()}</p>
+                        <p><strong>CLIENTE:</strong> {printingOrder.nome_cliente?.toUpperCase()}</p>
+                    </div>
+                    <div style={{ borderBottom: '1px dashed black', paddingBottom: '10px', marginBottom: '10px' }}>
+                        <p><strong>ITENS:</strong></p>
+                        <p style={{ whiteSpace: 'pre-wrap', fontSize: '14px' }}>{printingOrder.status?.split('-')[1]?.trim()}</p>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                        <h3 style={{ fontSize: '16px', margin: '0' }}>TOTAL: R$ {printingOrder.total?.toLocaleString('pt-BR') || printingOrder.valor?.toLocaleString('pt-BR')}</h3>
+                    </div>
+                    <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '10px' }}>
+                        <p>Obrigado pela preferência!</p>
+                    </div>
+                </div>
+            )}
 
             {/* MODAL UNIFICADO */}
             {showModal && (
