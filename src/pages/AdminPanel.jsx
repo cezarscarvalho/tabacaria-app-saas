@@ -579,13 +579,14 @@ export default function AdminPanel({ onLogout }) {
                         )}
 
                         {activeTab === 'configuracoes' && (
-                            <div className="max-w-4xl mx-auto animate-in zoom-in-95 duration-500">
+                            <div className="max-w-4xl mx-auto animate-in zoom-in-95 duration-500 space-y-12">
+                                {/* ── CONFIGURAÇÕES GERAIS ── */}
                                 <form onSubmit={handleUpdateSettings} className="bg-dark-800 border-2 border-dark-700 rounded-[4rem] p-16 shadow-3xl grid grid-cols-1 md:grid-cols-2 gap-12 relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
                                     <div className="space-y-8 relative z-10">
-                                        <h4 className="text-primary uppercase text-[11px] font-black border-b-2 border-primary/20 pb-3 italic tracking-[0.3em]">Segurança Hub</h4>
-                                        <div><label className="text-neutral-500 uppercase text-[10px] font-black mb-3 block italic tracking-widest">E-mail Master</label><input type="email" value={settings.email_admin} onChange={e => setSettings({ ...settings, email_admin: e.target.value })} className="w-full bg-dark-900 border-2 border-dark-700 rounded-2xl p-6 text-white font-bold outline-none focus:border-primary transition-all shadow-inner" /></div>
-                                        <div><label className="text-neutral-500 uppercase text-[10px] font-black mb-3 block italic tracking-widest">Acesso WhatsApp</label><input type="text" value={settings.whatsapp_suporte} onChange={e => setSettings({ ...settings, whatsapp_suporte: e.target.value })} className="w-full bg-dark-900 border-2 border-dark-700 rounded-2xl p-6 text-white font-bold outline-none focus:border-primary" /></div>
+                                        <h4 className="text-primary uppercase text-[11px] font-black border-b-2 border-primary/20 pb-3 italic tracking-[0.3em]">Contato & WhatsApp</h4>
+                                        <div><label className="text-neutral-500 uppercase text-[10px] font-black mb-3 block italic tracking-widest">WhatsApp Suporte</label><input type="text" value={settings.whatsapp_suporte} onChange={e => setSettings({ ...settings, whatsapp_suporte: e.target.value })} className="w-full bg-dark-900 border-2 border-dark-700 rounded-2xl p-6 text-white font-bold outline-none focus:border-primary transition-all shadow-inner" /></div>
+                                        <div><label className="text-neutral-500 uppercase text-[10px] font-black mb-3 block italic tracking-widest">Link Catálogo</label><input type="text" value={settings.link_catalogo} onChange={e => setSettings({ ...settings, link_catalogo: e.target.value })} className="w-full bg-dark-900 border-2 border-dark-700 rounded-2xl p-6 text-white font-bold outline-none focus:border-primary transition-all shadow-inner" /></div>
                                     </div>
                                     <div className="space-y-8 relative z-10">
                                         <h4 className="text-primary uppercase text-[11px] font-black border-b-2 border-primary/20 pb-3 italic tracking-[0.3em]">Automação</h4>
@@ -593,10 +594,80 @@ export default function AdminPanel({ onLogout }) {
                                             <div><label className="text-neutral-500 uppercase text-[10px] font-black mb-3 block italic tracking-widest">Dia Alerta</label><select value={settings.dia_prospeccao} onChange={e => setSettings({ ...settings, dia_prospeccao: e.target.value })} className="w-full bg-dark-900 p-6 border-2 border-dark-700 rounded-2xl text-white font-bold italic appearance-none cursor-pointer outline-none focus:border-primary">{['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'].map(d => <option key={d} value={d}>{d}</option>)}</select></div>
                                             <div><label className="text-neutral-500 uppercase text-[10px] font-black mb-3 block italic tracking-widest">Horário</label><input type="time" value={settings.horario_prospeccao} onChange={e => setSettings({ ...settings, horario_prospeccao: e.target.value })} className="w-full bg-dark-900 p-6 border-2 border-dark-700 rounded-2xl text-white font-bold outline-none focus:border-primary" /></div>
                                         </div>
-                                        <div><label className="text-neutral-500 uppercase text-[10px] font-black mb-3 block italic tracking-widest">Link Catálogo</label><input type="text" value={settings.link_catalogo} onChange={e => setSettings({ ...settings, link_catalogo: e.target.value })} className="w-full bg-dark-900 border-2 border-dark-700 rounded-2xl p-6 text-white font-bold outline-none focus:border-primary" /></div>
                                     </div>
                                     <button type="submit" disabled={loading} className="md:col-span-2 w-full bg-primary hover:bg-primary-hover text-dark-900 font-black py-7 rounded-[2.5rem] uppercase tracking-[0.4em] shadow-2xl transition-all hover:scale-[1.02] active:scale-95 text-sm mt-4 border-none flex items-center justify-center gap-4">
-                                        {loading ? <RefreshCw className="animate-spin" size={20} /> : <CheckCircle2 size={20} />} SALVAR SISTEMA
+                                        {loading ? <RefreshCw className="animate-spin" size={20} /> : <CheckCircle2 size={20} />} SALVAR CONFIGURAÇÕES
+                                    </button>
+                                </form>
+
+                                {/* ── ALTERAR CREDENCIAIS ── */}
+                                <form onSubmit={async (e) => {
+                                    e.preventDefault();
+                                    const currentEmailInput = e.target.elements.currentEmail.value.trim();
+                                    const newEmail = e.target.elements.newEmail.value.trim();
+                                    const newPassword = e.target.elements.newPassword.value;
+
+                                    if (!currentEmailInput) { alert('Preencha o e-mail atual para validação.'); return; }
+
+                                    // Verifica se o e-mail atual está correto
+                                    if (currentEmailInput !== settings.email_admin) {
+                                        alert('⚠️ E-mail atual incorreto. A alteração foi bloqueada por segurança.');
+                                        return;
+                                    }
+
+                                    const payload = {};
+                                    if (newEmail) payload.email_admin = newEmail;
+                                    if (newPassword) payload.senha_admin = newPassword;
+
+                                    if (Object.keys(payload).length === 0) {
+                                        alert('Preencha ao menos um campo para alterar (novo e-mail ou nova senha).');
+                                        return;
+                                    }
+
+                                    setLoading(true);
+                                    try {
+                                        const { error } = await supabase.from('configuracoes').update(payload).eq('id', settings.id);
+                                        if (error) throw error;
+
+                                        // Atualiza localStorage se email mudou
+                                        if (newEmail) {
+                                            const stored = localStorage.getItem('tabacaria_admin_auth');
+                                            if (stored) {
+                                                const parsed = JSON.parse(stored);
+                                                parsed.email = newEmail;
+                                                localStorage.setItem('tabacaria_admin_auth', JSON.stringify(parsed));
+                                            }
+                                        }
+
+                                        alert('✅ Credenciais alteradas com sucesso!');
+                                        fetchAllData();
+                                        e.target.reset();
+                                    } catch (err) {
+                                        alert('Erro ao alterar credenciais: ' + err.message);
+                                    }
+                                    setLoading(false);
+                                }} className="bg-dark-800 border-2 border-red-500/20 rounded-[4rem] p-16 shadow-3xl space-y-10 relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-64 h-64 bg-red-500/3 rounded-full blur-[80px] pointer-events-none"></div>
+                                    <div className="relative z-10">
+                                        <h4 className="text-red-400 uppercase text-[11px] font-black border-b-2 border-red-500/20 pb-3 italic tracking-[0.3em] mb-8 flex items-center gap-3"><AlertCircle size={16} /> Alterar Credenciais de Acesso</h4>
+                                        <p className="text-neutral-500 text-[10px] font-bold italic mb-8 uppercase tracking-widest">Para sua segurança, confirme o e-mail atual antes de alterar.</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                            <div>
+                                                <label className="text-red-400 uppercase text-[10px] font-black mb-3 block italic tracking-[0.2em]">E-mail Atual *</label>
+                                                <input name="currentEmail" type="email" required placeholder="Confirme o e-mail atual" className="w-full bg-dark-900 border-2 border-dark-700 rounded-2xl p-6 text-white font-bold outline-none focus:border-red-400 transition-all shadow-inner" />
+                                            </div>
+                                            <div>
+                                                <label className="text-primary uppercase text-[10px] font-black mb-3 block italic tracking-[0.2em]">Novo E-mail</label>
+                                                <input name="newEmail" type="email" placeholder="novo@email.com" className="w-full bg-dark-900 border-2 border-dark-700 rounded-2xl p-6 text-white font-bold outline-none focus:border-primary transition-all shadow-inner" />
+                                            </div>
+                                            <div>
+                                                <label className="text-primary uppercase text-[10px] font-black mb-3 block italic tracking-[0.2em]">Nova Senha</label>
+                                                <input name="newPassword" type="password" placeholder="••••••••" className="w-full bg-dark-900 border-2 border-dark-700 rounded-2xl p-6 text-white font-bold outline-none focus:border-primary transition-all shadow-inner" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="submit" disabled={loading} className="w-full bg-red-500/10 hover:bg-red-500 border-2 border-red-500/30 hover:border-red-500 text-red-400 hover:text-white font-black py-7 rounded-[2.5rem] uppercase tracking-[0.4em] shadow-2xl transition-all hover:scale-[1.02] active:scale-95 text-sm flex items-center justify-center gap-4">
+                                        {loading ? <RefreshCw className="animate-spin" size={20} /> : <AlertCircle size={20} />} ALTERAR CREDENCIAIS
                                     </button>
                                 </form>
                             </div>
