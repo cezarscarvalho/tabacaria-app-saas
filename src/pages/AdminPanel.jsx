@@ -100,7 +100,7 @@ export default function AdminPanel() {
             });
 
             const list = Object.entries(itemMap)
-                .map(([name, qty], idx) => ({ id: `log - ${idx} `, name, qty }))
+                .map(([name, qty], idx) => ({ id: `log-${idx}`, name, qty }))
                 .sort((a, b) => a.name.localeCompare(b.name));
 
             return { list, totalVolume };
@@ -113,17 +113,24 @@ export default function AdminPanel() {
         item.name.toLowerCase().includes(logSearch.toLowerCase())
     );
 
+    // Contagem Dinâmica para UI Premium
+    const selectedVolume = useMemo(() => {
+        return logisticsData.list
+            .filter(i => selectedLogIds.includes(i.id))
+            .reduce((acc, curr) => acc + curr.qty, 0);
+    }, [logisticsData.list, selectedLogIds]);
+
     const handleSendLogistics = () => {
-        const selected = filteredLogistics.filter(i => selectedLogIds.includes(i.id));
+        const selected = logisticsData.list.filter(i => selectedLogIds.includes(i.id));
         if (selected.length === 0) return alert('Selecione itens primeiro!');
 
         const targetSup = suppliers.find(s => s.id === selectedSupplierId);
         const phone = targetSup ? targetSup.whatsapp.replace(/\D/g, '') : '';
         const supName = targetSup ? targetSup.nome : 'Fornecedor';
 
-        let text = `* PEDIDO DE COMPRA - ${supName.toUpperCase()}* 🚚% 0A * Data:* ${new Date().toLocaleDateString()}% 0A % 0A`;
-        selected.forEach(i => text += `• ${i.name}: * ${i.qty} un *% 0A`);
-        text += `% 0A * Volume Total Selecionado: ${selected.reduce((a, b) => a + b.qty, 0)} unidades * `;
+        let text = `*PEDIDO DE COMPRA - ${supName.toUpperCase()}* 🚚%0A*Data:* ${new Date().toLocaleDateString()}%0A%0A`;
+        selected.forEach(i => text += `• ${i.name}: *${i.qty} un*%0A`);
+        text += `%0A*Volume Total Selecionado: ${selected.reduce((a, b) => a + b.qty, 0)} unidades*`;
 
         window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
     };
@@ -276,13 +283,22 @@ export default function AdminPanel() {
                                     </div>
                                 </div>
 
-                                {/* CONTADOR DE VOLUME TOTAL */}
-                                <div className="p-10 rounded-[2.5rem] border-2 border-primary/20 bg-gradient-to-br from-primary to-emerald-400 shadow-2xl shadow-primary/10 mb-10 group overflow-hidden relative">
-                                    <PackageOpen size={180} className="absolute -right-8 -bottom-8 text-dark-900/10 group-hover:scale-110 transition-transform duration-700" />
-                                    <div className="relative z-10">
-                                        <span className="text-dark-900/50 font-black uppercase text-[10px] tracking-widest block mb-1">Carga Geral Consolidada</span>
-                                        <h2 className="text-5xl font-black text-dark-900 uppercase italic tracking-tighter">Volume Total: <span className="text-white drop-shadow-lg">{logisticsData.totalVolume}</span> pacotes</h2>
-                                        <p className="mt-4 text-dark-900/60 font-bold uppercase text-[9px] tracking-widest">Soma de todos os itens marcados na aba Vendas</p>
+                                {/* CONTADORES DINÂMICOS PREMIUM */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                                    <div className="bg-gradient-to-r from-primary to-emerald-400 p-8 rounded-3xl shadow-xl shadow-primary/10 relative overflow-hidden group">
+                                        <Calculator size={100} className="absolute -right-4 -bottom-4 text-dark-900/10 group-hover:scale-110 transition-transform" />
+                                        <span className="text-dark-900/50 font-black uppercase text-[10px] tracking-widest block mb-1">Carga Geral</span>
+                                        <h2 className="text-4xl font-black text-dark-900 italic tracking-tighter">{logisticsData.totalVolume} <span className="text-[14px]">pacotes</span></h2>
+                                    </div>
+                                    <div className="bg-dark-800 border-2 border-primary/30 p-8 rounded-3xl shadow-2xl relative overflow-hidden group">
+                                        <Zap size={100} className="absolute -right-4 -bottom-4 text-primary/5 group-hover:scale-110 transition-transform" />
+                                        <span className="text-primary font-black uppercase text-[10px] tracking-widest block mb-1">Selecionado para Envio</span>
+                                        <h2 className="text-4xl font-black text-white italic tracking-tighter">{selectedVolume} <span className="text-primary text-[14px]">un</span></h2>
+                                    </div>
+                                    <div className="bg-dark-800 border-2 border-dark-700 p-8 rounded-3xl shadow-xl relative overflow-hidden group">
+                                        <PackageOpen size={100} className="absolute -right-4 -bottom-4 text-neutral-800/20 group-hover:scale-110 transition-transform" />
+                                        <span className="text-neutral-500 font-black uppercase text-[10px] tracking-widest block mb-1">Restante em Espera</span>
+                                        <h2 className="text-4xl font-black text-neutral-400 italic tracking-tighter">{logisticsData.totalVolume - selectedVolume} <span className="text-[14px]">un</span></h2>
                                     </div>
                                 </div>
 
@@ -310,10 +326,12 @@ export default function AdminPanel() {
                                             </div>
                                             <button
                                                 onClick={handleSendLogistics}
-                                                disabled={!selectedSupplierId}
+                                                disabled={!selectedSupplierId || selectedLogIds.length === 0}
                                                 className={`flex-1 md:flex-none bg-primary hover:scale-105 active:scale-95 text-dark-900 font-black py-4 px-10 rounded-2xl uppercase tracking-[0.2em] shadow-xl text-xs italic transition-all disabled:opacity-30 disabled:grayscale disabled:hover:scale-100 flex items-center justify-center gap-3`}
                                             >
-                                                {selectedSupplierId ? 'Disparar para Fornecedor' : <><Zap size={14} className="fill-current" /> Selecione Fornecedor Primeiro</>}
+                                                {selectedLogIds.length > 0
+                                                    ? `Enviar ${selectedLogIds.length} itens selecionados`
+                                                    : <><Zap size={14} className="fill-current" /> Selecione Itens Primeiro</>}
                                             </button>
                                         </div>
                                     </div>
@@ -326,7 +344,7 @@ export default function AdminPanel() {
                                             {filteredLogistics.map(item => {
                                                 const isSel = selectedLogIds.includes(item.id);
                                                 return (
-                                                    <tr key={item.id} onClick={() => setSelectedLogIds(p => p.includes(item.id) ? p.filter(x => x !== item.id) : [...p, item.id])} className={`hover:bg-dark-700/50 cursor-pointer group transition-all ${isSel ? 'bg-primary/5' : ''}`}>
+                                                    <tr key={item.id} onClick={() => setSelectedLogIds(p => p.includes(item.id) ? p.filter(x => x !== item.id) : [...p, item.id])} className={`hover:bg-dark-700/50 cursor-pointer group transition-all even:bg-dark-900/30 ${isSel ? 'bg-primary/10 border-l-4 border-l-primary' : ''}`}>
                                                         <td className="p-8 text-center">
                                                             <div className={`w-8 h-8 rounded-xl border-2 flex items-center justify-center mx-auto transition-all ${isSel ? 'bg-primary border-primary rotate-12' : 'border-dark-600 group-hover:border-primary/30'}`}>
                                                                 {isSel && <Zap size={16} className="text-dark-900 fill-current" />}
@@ -334,7 +352,7 @@ export default function AdminPanel() {
                                                         </td>
                                                         <td className="p-8 font-black text-white italic text-xl uppercase tracking-tighter group-hover:text-primary transition-colors">{item.name}</td>
                                                         <td className="p-8 text-right">
-                                                            <span className={`inline-block font-black px-6 py-2 rounded-xl border-2 transition-all ${isSel ? 'bg-primary text-dark-900 border-primary' : 'bg-dark-900 text-neutral-500 border-dark-700'}`}>{item.qty} un</span>
+                                                            <span className={`inline-block font-black px-5 py-2 rounded-xl border-2 transition-all text-xs tracking-widest uppercase ${isSel ? 'bg-primary text-dark-900 border-primary shadow-lg shadow-primary/20' : 'bg-dark-900/50 text-neutral-500 border-dark-700'}`}>{item.qty} un</span>
                                                         </td>
                                                     </tr>
                                                 );
