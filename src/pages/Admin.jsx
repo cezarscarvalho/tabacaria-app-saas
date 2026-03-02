@@ -22,16 +22,16 @@ export default function Admin() {
     const [unreadMessages, setUnreadMessages] = useState(0);
     const prevUnreadCount = useRef(0);
 
-    console.log("VERSÃO NOVA ADMIN 01-03-2026");
+
 
     // Audio Notification logic
-    useEffect(() => {
-        if (unreadMessages > prevUnreadCount.current) {
-            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-            audio.play().catch(e => console.log('Erro ao tocar som:', e));
-        }
-        prevUnreadCount.current = unreadMessages;
-    }, [unreadMessages]);
+    // useEffect(() => {
+    //     if (unreadMessages > prevUnreadCount.current) {
+    //         const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
+    //         audio.play().catch(e => console.log('Erro ao tocar som:', e));
+    //     }
+    //     prevUnreadCount.current = unreadMessages;
+    // }, [unreadMessages]);
 
     // Products State
     const [products, setProducts] = useState([]);
