@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { getProducts, createProduct } from "../../services/productsService";
-import { useCompany } from "../../context/CompanyContext";
+import { getProducts, createProduct } from "../../../services/productsService";
+import { useCompany } from "../../../context/CompanyContext";
 
 export default function Products() {
 

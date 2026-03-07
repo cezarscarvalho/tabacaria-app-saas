@@ -3,13 +3,13 @@ import { CompanyProvider } from "./context/CompanyContext";
 
 import AdminLayout from "./layouts/AdminLayout";
 
-import Dashboard from "./pages/admin/Dashboard";
-import Orders from "./pages/admin/Orders";
-import Products from "./pages/admin/Products";
-import Clients from "./pages/admin/Clients";
-import Suppliers from "./pages/admin/Suppliers";
-import Finance from "./pages/admin/Finance";
-import Settings from "./pages/admin/Settings";
+import Dashboard from "./modules/dashboard/pages/Dashboard";
+import Orders from "./modules/orders/pages/Orders";
+import Products from "./modules/products/pages/Products";
+import Clients from "./modules/clients/pages/Clients";
+import Suppliers from "./modules/suppliers/pages/Suppliers.jsx";
+import Finance from "./modules/finance/pages/Finance";
+import Settings from "./modules/settings/pages/Settings";
 
 import Login from "./pages/auth/Login";
 
