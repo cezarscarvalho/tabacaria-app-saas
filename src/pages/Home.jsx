@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../core/supabaseClient';
 import ProductCard from '../components/ProductCard';
 import CartFAB from '../components/CartFAB';
 import CartModal from '../components/CartModal';
