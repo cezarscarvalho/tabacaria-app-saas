@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getProducts, createProduct } from "../../../services/productsService";
+import { getProducts, createProduct } from "../services/productService";
 import { useCompany } from "../../../context/CompanyContext";
 
 export default function Products() {
@@ -7,23 +7,27 @@ export default function Products() {
     const { company } = useCompany();
 
     const [products, setProducts] = useState([]);
-    const [name, setName] = useState("");
-    const [price, setPrice] = useState("");
+    const [nome, setNome] = useState("");
+    const [precoVenda, setPrecoVenda] = useState("");
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     async function loadProducts() {
+
         if (!company) return;
 
         setLoading(true);
 
-        const { data, error } = await getProducts(company.id);
+        try {
 
-        if (error) {
-            setError(error.message);
-        } else {
+            const data = await getProducts(company.id);
             setProducts(data);
+
+        } catch (err) {
+
+            setError("Erro ao carregar produtos");
+
         }
 
         setLoading(false);
@@ -34,52 +38,57 @@ export default function Products() {
     }, [company]);
 
     async function handleAddProduct(e) {
+
         e.preventDefault();
 
-        if (!name || !price) return;
+        if (!nome || !precoVenda) return;
 
         const product = {
-            name,
-            price: Number(price),
+            nome: nome,
+            preco_venda: Number(precoVenda),
+            estoque_atual: 0,
             company_id: company.id
         };
 
-        const { error } = await createProduct(product);
+        const result = await createProduct(product);
 
-        if (error) {
+        if (!result) {
             alert("Erro ao criar produto");
             return;
         }
 
-        setName("");
-        setPrice("");
+        setNome("");
+        setPrecoVenda("");
 
         loadProducts();
     }
 
     return (
+
         <div>
 
             <h1>Produtos</h1>
 
             <form onSubmit={handleAddProduct}>
+
                 <input
                     type="text"
                     placeholder="Nome do produto"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
                 />
 
                 <input
                     type="number"
-                    placeholder="Preço"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="Preço de venda"
+                    value={precoVenda}
+                    onChange={(e) => setPrecoVenda(e.target.value)}
                 />
 
                 <button type="submit">
                     Adicionar
                 </button>
+
             </form>
 
             {loading && <p>Carregando produtos...</p>}
@@ -87,13 +96,19 @@ export default function Products() {
             {error && <p>{error}</p>}
 
             <ul>
+
                 {products.map((product) => (
+
                     <li key={product.id}>
-                        {product.name} - R$ {product.price}
+                        {product.nome} - R$ {product.preco_venda}
                     </li>
+
                 ))}
+
             </ul>
 
         </div>
+
     );
+
 }
