@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 import { Flame, LogIn, Eye, EyeOff, Mail, ArrowLeft, ShieldCheck } from 'lucide-react';
 
 export default function Login({ onLogin }) {

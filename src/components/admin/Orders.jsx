@@ -1,5 +1,5 @@
 import React from 'react';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 import { Calendar, Trash2, CheckCircle2, Copy, Truck } from 'lucide-react';
 
 export default function Orders({ ordersData, refreshFunc }) {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 import { Search, Plus, Edit, Trash2, UserPlus, X, Save, MessageSquare, Store } from 'lucide-react';
 
 export default function Clients({ clientsData, refreshFunc }) {

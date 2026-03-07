@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CheckCircle2, X } from 'lucide-react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 
 export default function CheckoutConfirmationModal({ isOpen, onClose, orderData, onConfirm }) {
     const [isLoading, setIsLoading] = useState(false);

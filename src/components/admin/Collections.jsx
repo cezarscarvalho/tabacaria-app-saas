@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 import { Search, Send, UserCheck, UserMinus, MessageSquare, ShoppingCart } from 'lucide-react';
 import { formatarNumeroWhats } from '../../utils/whatsapp';
 

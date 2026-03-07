@@ -11,12 +11,28 @@ import Suppliers from "./pages/admin/Suppliers";
 import Finance from "./pages/admin/Finance";
 import Settings from "./pages/admin/Settings";
 
+import Login from "./pages/auth/Login";
+
+import ProtectedRoute from "./components/ProtectedRoute";
+
 function App() {
   return (
     <BrowserRouter>
       <CompanyProvider>
         <Routes>
-          <Route path="/admin" element={<AdminLayout />}>
+
+          {/* rota de login */}
+          <Route path="/login" element={<Login />} />
+
+          {/* rotas admin */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Dashboard />} />
             <Route path="orders" element={<Orders />} />
             <Route path="products" element={<Products />} />
@@ -25,6 +41,7 @@ function App() {
             <Route path="finance" element={<Finance />} />
             <Route path="settings" element={<Settings />} />
           </Route>
+
         </Routes>
       </CompanyProvider>
     </BrowserRouter>

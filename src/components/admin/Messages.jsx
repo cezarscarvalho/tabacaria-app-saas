@@ -1,5 +1,5 @@
 import React from 'react';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 import { Mail, MailOpen, Trash2, Clock, MessageCircle } from 'lucide-react';
 import { formatarNumeroWhats } from '../../utils/whatsapp';
 

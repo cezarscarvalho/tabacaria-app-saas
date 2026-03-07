@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '../lib/supabaseClient';
 import { Mail, Check, AlertTriangle, Save, Store, ShieldCheck, Globe, MessageSquare } from 'lucide-react';
 import ForcePasswordChange from '../ForcePasswordChange';
 
