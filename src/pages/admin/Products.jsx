@@ -1,122 +1,99 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../../supabaseClient";
+import { getProducts, createProduct } from "../../services/productsService";
 import { useCompany } from "../../context/CompanyContext";
 
 export default function Products() {
 
-    const { companyId, role, loadingCompany } = useCompany();
+    const { company } = useCompany();
 
     const [products, setProducts] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [nome, setNome] = useState("");
-    const [preco, setPreco] = useState("");
+    const [name, setName] = useState("");
+    const [price, setPrice] = useState("");
 
-    // =============================
-    // BUSCAR PRODUTOS
-    // =============================
-    const fetchProducts = async () => {
-        if (!companyId) return;
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    async function loadProducts() {
+        if (!company) return;
 
         setLoading(true);
 
-        const { data, error } = await supabase
-            .from("produtos")
-            .select("*")
-            .eq("company_id", companyId)
-            .order("id", { ascending: false });
+        const { data, error } = await getProducts(company.id);
 
         if (error) {
-            console.error("Erro ao buscar produtos:", error.message);
+            setError(error.message);
         } else {
-            setProducts(data || []);
+            setProducts(data);
         }
 
         setLoading(false);
-    };
+    }
 
     useEffect(() => {
-        if (!loadingCompany && companyId) {
-            fetchProducts();
-        }
-    }, [companyId, loadingCompany]);
+        loadProducts();
+    }, [company]);
 
-    // =============================
-    // CRIAR PRODUTO
-    // =============================
-    const handleCreate = async (e) => {
+    async function handleAddProduct(e) {
         e.preventDefault();
 
-        if (!nome || !preco) return;
+        if (!name || !price) return;
 
-        const { error } = await supabase
-            .from("produtos")
-            .insert([
-                {
-                    nome,
-                    preco_venda: parseFloat(preco),
-                    company_id: companyId
-                }
-            ]);
+        const product = {
+            name,
+            price: Number(price),
+            company_id: company.id
+        };
+
+        const { error } = await createProduct(product);
 
         if (error) {
-            console.error("Erro ao criar produto:", error.message);
-        } else {
-            setNome("");
-            setPreco("");
-            fetchProducts();
+            alert("Erro ao criar produto");
+            return;
         }
-    };
 
-    // =============================
-    // PERMISSÃO
-    // =============================
-    const canCreate = role === "owner" || role === "admin";
+        setName("");
+        setPrice("");
+
+        loadProducts();
+    }
 
     return (
         <div>
-            <h1 className="text-2xl font-bold mb-6">Produtos</h1>
 
-            {canCreate && (
-                <form onSubmit={handleCreate} className="mb-6 space-x-2">
-                    <input
-                        type="text"
-                        placeholder="Nome"
-                        value={nome}
-                        onChange={(e) => setNome(e.target.value)}
-                        className="px-3 py-2 bg-dark-800 border border-dark-700 rounded"
-                    />
-                    <input
-                        type="number"
-                        placeholder="Preço"
-                        value={preco}
-                        onChange={(e) => setPreco(e.target.value)}
-                        className="px-3 py-2 bg-dark-800 border border-dark-700 rounded"
-                    />
-                    <button
-                        type="submit"
-                        className="px-4 py-2 bg-primary text-black rounded"
-                    >
-                        Criar
-                    </button>
-                </form>
-            )}
+            <h1>Produtos</h1>
 
-            {loading && <p>Carregando...</p>}
+            <form onSubmit={handleAddProduct}>
+                <input
+                    type="text"
+                    placeholder="Nome do produto"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                />
 
-            {!loading && products.length === 0 && (
-                <p>Nenhum produto cadastrado.</p>
-            )}
+                <input
+                    type="number"
+                    placeholder="Preço"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                />
 
-            <ul className="space-y-2">
+                <button type="submit">
+                    Adicionar
+                </button>
+            </form>
+
+            {loading && <p>Carregando produtos...</p>}
+
+            {error && <p>{error}</p>}
+
+            <ul>
                 {products.map((product) => (
-                    <li
-                        key={product.id}
-                        className="border border-dark-700 p-3 rounded"
-                    >
-                        {product.nome} - R$ {product.preco_venda}
+                    <li key={product.id}>
+                        {product.name} - R$ {product.price}
                     </li>
                 ))}
             </ul>
+
         </div>
     );
 }
